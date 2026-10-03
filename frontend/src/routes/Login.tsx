@@ -1,15 +1,17 @@
 import { useState } from "react";
 import Input from "../components/authInput";
 import { useNavigate } from "react-router";
+import { useUser } from "../UserContext.tsx";
 
 function Login() {
     const [errMsg, setErrMsg] = useState("");
     const navigate = useNavigate()
+    const { refresh } = useUser();
 
     const Login = (event: React.SubmitEvent<HTMLFormElement>) => {
         event.preventDefault();
         const userInputs = Object.fromEntries(new FormData(event.currentTarget));
-        fetch("http://localhost:3000/auth/login", {
+        fetch("/api/auth/login", {
             method: "POST",
             headers: {"Content-Type": "application/Json"},
             body: JSON.stringify(userInputs),
@@ -17,6 +19,7 @@ function Login() {
         })
         .then(res => {
             const status = Number(res.status);
+            refresh();
             if (status >= 200 && status <= 299) {
                 navigate("/")
             }

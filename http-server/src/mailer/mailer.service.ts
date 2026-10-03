@@ -15,34 +15,42 @@ export class MailerService {
             sandbox: true,
             testInboxId: 4262057,
         }));
-        const sender = {
-            address: "hello@demomailtrap.co",
-            name: "Mailtrap Test",
-        };
-        const recipients = [
-        "luky.zoz@seznam.cz",
-        ]; 
-
-        this.transport
-        .sendMail({
-            from: sender,
-            to: recipients,
-            subject: "You are awesome!",
-            text: "Congrats for sending test email with Mailtrap!",
-            category: "Integration Test",
-        })
-        .then(console.log, console.error);
     }
-    sendMail(address: string, name: string, recipients: string[], subject: string, text: string, category: string) {
-        this.transport.sendMail({
+    sendMail(recipients: string[], subject: string, text: string, html: string) {
+        this.transport
+          .sendMail({
             from: {
-                address: address,
-                name: name
+              address: 'hello@demomailtrap.co',
+              name: "Mailtrap",
             },
             to: recipients,
             subject: subject,
             text: text,
-            category: category
-        })
+            html: html
+          }, (error, info) => {
+            if (error) {
+              return console.error(error);
+            }
+            console.log("Message sent: %s", info);
+          })
     }
+
+    /*
+    this.transport
+          .sendMail({
+            from: {
+              address: 'hello@demomailtrap.co',
+              name: "Mailtrap",
+            },
+            to: recipients,
+            subject: "Verifikační kód",
+            text: `Váš verifikační kód: ${code}.`,
+            html: `<div><p>Váš verifikační kód: ${code}</p></div>`
+          }, (error, info) => {
+            if (error) {
+              return console.error(error);
+            }
+            console.log("Message sent: %s", info.message);
+          })
+            */
 }

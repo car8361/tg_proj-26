@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import session from "express-session";
 import { ConsoleLogger, ValidationPipe } from "@nestjs/common";
+import { json } from "express";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -11,6 +12,8 @@ async function bootstrap() {
       colors: process.env.NODE_ENV !== "production"
     })
   });
+  app.setGlobalPrefix("api");
+  app.use(json());
   app.enableCors({
     origin: "http://localhost:5173",
     credentials: true
@@ -23,7 +26,6 @@ async function bootstrap() {
   }));
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
-    forbidNonWhitelisted: true,
     transform: true
   }))
   await app.listen(process.env.PORT ?? 3000);

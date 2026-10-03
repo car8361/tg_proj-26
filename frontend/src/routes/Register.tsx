@@ -1,4 +1,4 @@
-import { useReducer, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Input from "../components/authInput";
 import { useNavigate } from "react-router";
 
@@ -29,7 +29,7 @@ function Login() {
         if (errMsg.length > 0 || userErr.length > 0 || emailErr.length > 0 || passErr.length > 0 || passConfErr.length > 0) {
             setErrMsg("Nejprve vyřeš chyby 😨")
         }
-        fetch("http://localhost:3000/auth/register", {
+        fetch("/api/auth/register", {
             method: "POST",
             headers: {"Content-Type": "application/Json"},
             body: JSON.stringify(userInputs),
@@ -38,11 +38,11 @@ function Login() {
         .then(res => {
             const status = res.status;
             if (status >= 200 && status <= 299) {
-                navigate("login")
+                navigate("/login");
             } 
             if (status >= 400 && status < 500) {
                 if (status === 409) {
-                    return setUserErr("Nesprávné údaje")
+                    return setErrMsg("Zabrané uživatelské jméno nebo e-mail")
                 }
                 setErrMsg("Nesprávné Registrační údaje");
             } else if (status >= 500) {
@@ -63,8 +63,11 @@ function Login() {
                 userInputChanged(value);
             }
             if (type === "password") {
-            passwordInputChanged(value);
-        }
+                passwordInputChanged(value);
+            }
+            if (type === "email") {
+                emailInputChanged(value);
+            }
         }, 800);
     }
 
@@ -77,12 +80,27 @@ function Login() {
             return setUserErr("Uživatelské jméno obsahuje nepovolené znaky");
         }
         //fetch jestli je user volný
-        fetch(`http://localhost:3000/auth/user?username=${value}`)
+        fetch(`/api/auth/user?username=${value}`)
         .then(res => {
             if (res.status === 409) {
                 return setUserErr("Uživatelské jméno zabrené");
             }
         })
+    }
+
+    const emailInputChanged = (value: string) => {
+        fetch(`/api/auth/email?email=${value}`)
+            .then(res => {
+                if (value.length < 3) {
+                    return setEmailErr("");
+                }
+                if (res.status === 409) {
+                    return setEmailErr("E-mail již používaný");
+                }
+                if (res.status === 400) {
+                    return setEmailErr("Není e-mail");
+                }
+            })
     }
 
     const passwordInputChanged = (value: string) => {

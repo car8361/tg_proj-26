@@ -1,0 +1,20 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { FriendsController } from './friends.controller.js';
+import { FriendsService } from './friends.service.js';
+
+describe('FriendsController', () => {
+  let controller: FriendsController;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [FriendsController],
+      providers: [FriendsService],
+    }).compile();
+
+    controller = module.get<FriendsController>(FriendsController);
+  });
+
+  it('should be defined', () => {
+    expect(controller).toBeDefined();
+  });
+});

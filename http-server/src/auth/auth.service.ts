@@ -1,7 +1,7 @@
 import { ConflictException, Injectable, UnauthorizedException, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import * as b from "bcrypt";
-import * as c from "crypto";
+import { randomInt } from "node:crypto";
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
 import { MailerService } from '../mailer/mailer.service.js';
 
@@ -36,7 +36,7 @@ export class AuthService {
           { email: identifier },
         ],
       },
-      select: {id: true, username: true, password: true},
+      select: {id: true, email: true, username: true, password: true},
     });
 
     const DUMMY_HASH = process.env.DUMMY_HASH;
@@ -47,25 +47,53 @@ export class AuthService {
       throw new UnauthorizedException('Invalid identifier or password');
     }
 
-    return {id: userQuery?.id, username: userQuery?.username };
+    return {id: userQuery?.id, email: userQuery?.email, username: userQuery?.username };
   }
-  async createEmailCode(userId: number) {
-    
-  }
-  async verifyCode(code: string, userId: number): Promise<boolean> {
-    const res = await this.conn.email_code.findFirst({
-      where: {
-        AND: [
-          { user_id: userId },
-          { code }
-        ]
-      }
+  async sendMailCode(email: string, userId: number) {
+    const code = randomInt(1000000).toString();
+    await this.conn.email_code.create({
+      data: {user_id: userId, email, code, attempts: 0},
     })
-    if (res) {
-      return true;
-    } else {
+    this.mailer.sendMail(
+      [email],
+      `Váš verifikační kód`,
+      `Váš verifikační kód je: ${code}.\nVyprší za 5 minut, prosím s nikým nesdílejte.`,
+      `<div>Váš verifikační kód je: ${code}.\nVyprší za 5 minut, prosím s nikým nesdílejte.</div>`
+    )
+  }
+  async verifyCode(code: string, userId: number, ip: string): Promise<boolean> {
+    const res = await this.conn.email_code.findFirst({
+      where: { user_id: userId },
+    })
+    if (!res) {
       return false;
     }
+    if (new Date() > res.due_until) {
+      await this.conn.email_code.delete({
+        where: {id: res.user_id}
+      });
+      return false;
+    }
+    if (res.attempts >= 3) {
+      await this.conn.email_code.delete({
+        where: {id: res.user_id}
+      });
+      await this.mailer.sendMail(
+        [res.email],
+        `Podezřelá aktivita`,
+        `Někdo se pokouší přihlásit do Vašeho účtu z ${ip}.`,
+        `<div>Někdo se pokouší přihlásit do Vašeho účtu z ${ip}.<div>`,
+      );
+      return false;
+    }
+    if (res?.code !== code) {
+      await this.conn.email_code.update({
+        where: {id: res.id},
+        data: { attempts: res.attempts + 1 },
+      })
+      return false;
+    }
+    return true;
   }
   async deleteUser(id: number) {
     try {
@@ -80,8 +108,13 @@ export class AuthService {
     }
   }
   async getUser(username: string) {
-    return await this.conn.user.findFirst({
+    return this.conn.user.findFirst({
       where: { username },
+    });
+  }
+  async getEmail(email: string) {
+    return this.conn.user.findFirst({
+      where: { email },
     });
   }
 }
