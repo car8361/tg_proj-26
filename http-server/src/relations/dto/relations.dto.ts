@@ -23,3 +23,8 @@ export class DeleteFriendDto {
 	@IsId()
 	friendId: bigint;
 }
+
+export class BlockDto {
+	@IsId()
+	targetId: bigint;
+}

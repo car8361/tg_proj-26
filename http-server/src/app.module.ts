@@ -5,10 +5,11 @@ import { MailerModule } from './mailer/mailer.module.js';
 import { UsersModule } from './users/users.module.js';
 import { ChatsModule } from './chats/chats.module.js';
 import { MeModule } from './me/me.module.js';
-import { FriendsModule } from './friends/friends.module.js';
+import { RelationsModule } from './relations/relations.module.js';
+import { ReportsModule } from './reports/reports.module.js';
 
 @Module({
-  imports: [AuthModule, PrismaModule, MailerModule, UsersModule, ChatsModule, MeModule, FriendsModule],
+  imports: [AuthModule, PrismaModule, MailerModule, UsersModule, ChatsModule, MeModule, RelationsModule, ReportsModule],
   controllers: [],
   providers: [],
 })

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, Req, Ip, Session, UseGuards, Res, Query, ParseUUIDPipe, ConflictException } from '@nestjs/common';
+import { Controller, Get, Post, Body, HttpCode, Req, Ip, UseGuards, Res, Query, ConflictException } from '@nestjs/common';
 import { AuthService } from './auth.service.js';
 import { RegisterDto } from "./dto/register.dto.js";
 import { LoginDto } from './dto/login.dto.js';
@@ -8,7 +8,6 @@ import { SessionUserId } from '../common/decorators/session-user-id/session-user
 import {EmailDto, UsernameDto} from './dto/auth.dto.js';
 import { $2faDto } from './dto/$2fa.dto.js';
 import { MailerService } from '../mailer/mailer.service.js';
-import {SessionData} from "express-session";
 
 @Controller('auth')
 export class AuthController {
