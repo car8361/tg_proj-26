@@ -1,14 +1,34 @@
-import {MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer} from '@nestjs/websockets';
+import {
+  MessageBody,
+  OnGatewayConnection,
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer
+} from '@nestjs/websockets';
+import { Server, Socket } from 'socket.io';
+import {ChatsService} from "./chats.service.js";
 
 @WebSocketGateway(3001, {
   cors: { origin: process.env.FRONTEND_URL, credentials: true }
 })
-export class ChatsGateway {
+export class ChatsGateway implements OnGatewayConnection {
   @WebSocketServer()
-  server: any;
+  server: Server;
 
-  @SubscribeMessage('connect')
-  handleMessage(@MessageBody() message: string) {
-    this.server.emit('connect', message);
+  constructor (private readonly chatsService: ChatsService) {}
+
+  handleConnection(client: Socket) {
+     try {
+       const userId = client.data.userId
+       if (!userId) {
+         return;
+       }
+     } catch {
+       client.disconnect();
+     }
+  }
+
+  async broadcastMessage() {
+
   }
 }

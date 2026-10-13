@@ -49,7 +49,7 @@ export class AuthService {
 
     return {id: userQuery?.id, email: userQuery?.email, username: userQuery?.username };
   }
-  async sendMailCode(email: string, userId: number) {
+  async sendMailCode(email: string, userId: bigint) {
     const code = randomInt(1000000).toString();
     await this.conn.email_code.create({
       data: {user_id: userId, email, code, attempts: 0},
@@ -61,7 +61,7 @@ export class AuthService {
       `<div>Váš verifikační kód je: ${code}.\nVyprší za 5 minut, prosím s nikým nesdílejte.</div>`
     )
   }
-  async verifyCode(code: string, userId: number, ip: string): Promise<boolean> {
+  async verifyCode(code: string, userId: bigint, ip: string): Promise<boolean> {
     const res = await this.conn.email_code.findFirst({
       where: { user_id: userId },
     })
@@ -95,7 +95,7 @@ export class AuthService {
     }
     return true;
   }
-  async deleteUser(id: number) {
+  async deleteUser(id: bigint) {
     try {
       await this.conn.user.delete({
         where: {id},

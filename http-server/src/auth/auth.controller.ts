@@ -42,7 +42,7 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
     @Body() body: $2faDto,
-    @SessionUserId() userId: number,
+    @SessionUserId() userId: bigint,
   ) {
     const { code } = body;
     const verified = await this.authService.verifyCode(code, userId, req.ip ?? "Neznámá IP adresa");
@@ -59,7 +59,7 @@ export class AuthController {
   async del(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
-    @SessionUserId() userId: number,
+    @SessionUserId() userId: bigint,
   ) {
     await this.authService.deleteUser(userId);
     await new Promise<void>((resolve, reject) => {
