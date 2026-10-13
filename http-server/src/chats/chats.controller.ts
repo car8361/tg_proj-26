@@ -12,7 +12,7 @@ export class ChatsController {
 
   @Post("/message/:messageId")
   @UseGuards(SessionVerified)
-  async postMessage(@Req() req: Request, @Body() body: MessageDto, @SessionUserId() userId: bigint) {
+  async postMessage(@Body() body: MessageDto, @SessionUserId() userId: bigint) {
     return this.chatsService.handleMessage(userId, body.chatId, body.message);
   }
 
