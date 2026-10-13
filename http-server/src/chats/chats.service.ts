@@ -1,10 +1,11 @@
 import {BadRequestException, Injectable} from '@nestjs/common';
 import {PrismaService} from "../prisma/prisma.service.js";
 import {Prisma} from "../generated/prisma/client.js";
+import {ChatsGateway} from "./chats.gateway.js";
 
 @Injectable()
 export class ChatsService {
-	constructor(private readonly conn: PrismaService) {}
+	constructor(private readonly conn: PrismaService, private readonly gateway: ChatsGateway) {}
 
 	async handleMessage(userId: bigint, chatId: bigint, message: string) {
 		await this.conn.chat_message.create({
@@ -16,6 +17,6 @@ export class ChatsService {
 				}
 			}
 		})
-		//zavolat socket
+		return await this.gateway.broadcastMessage();
 	}
 }

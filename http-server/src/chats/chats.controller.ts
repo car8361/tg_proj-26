@@ -4,6 +4,7 @@ import { MessageDto } from "./dto/chat.dto.js";
 import { IsMessageOwner } from "./chats.guard.js";
 import {SessionVerified} from "../auth/auth.guard.js";
 import type { Request } from 'express';
+import {SessionUserId} from "../common/decorators/session-user-id/session-user-id.decorator.js";
 
 @Controller('chats')
 export class ChatsController {
@@ -11,8 +12,7 @@ export class ChatsController {
 
   @Post("/message/:messageId")
   @UseGuards(SessionVerified)
-  async postMessage(@Req() req: Request, @Body() body: MessageDto) {
-    const userId = req.session.userId;
+  async postMessage(@Req() req: Request, @Body() body: MessageDto, @SessionUserId() userId: bigint) {
     return this.chatsService.handleMessage(userId, body.chatId, body.message);
   }
 
