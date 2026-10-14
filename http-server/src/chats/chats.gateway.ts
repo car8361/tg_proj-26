@@ -56,12 +56,33 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayInit {
     return { ok: true };
   }
 
-  async broadcastMessage(roomId: string[], senderName: string, message: string) {
+  /*
+  async broadcastMessage(roomId: string[], senderName: string, senderId: bigint, message: string) {
     try {
-      this.server.to(roomId).emit('message', {senderName, message});
+      this.server.to(roomId).emit('message:sent', {senderName, senderId, message});
     } catch (err) {
-      console.error(err);
-      throw new HttpException("Internal Server Error", 500); //potřebuje změnu
+      throw err; //je vpořádku throwovat errory? (vícekrát)
+    }
+  }
+
+  async broadcastMessageUpdate(userId: bigint, roomId: string[], newMessage: string) {
+    try {
+      this.server.to(roomId).emit('message:update', {userId, newMessage});
+    } catch (err) {
+      throw err;
+    }
+  }
+  */
+
+  /**
+   * - data musí být převedena na string
+   */
+  emitMessageToRoom<T>(roomIds: string[], toEmit: string, data: T) {
+    try {
+      this.server.to(roomIds).emit(toEmit, data);
+    } catch (err) {
+      //needs some handling
+      throw err;
     }
   }
 }

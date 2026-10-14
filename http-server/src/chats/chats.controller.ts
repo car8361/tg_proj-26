@@ -20,14 +20,18 @@ export class ChatsController {
   @Delete("/message/:messageId")
   @UseGuards(IsMessageOwner)
   async delMessage(@Param('messageId', ParseBigintPipe) messageId: bigint) {
-    await this.chatsService.delMessage()
+    return await this.chatsService.delMessage(messageId);
   }
 
   @Patch("/message/:messageId")
   @UseGuards(IsMessageOwner)
-  async patchMessage(@Body() body: PatchMessagesDto, @Param('messageId', ParseBigintPipe) messageId: bigint) {
+  async patchMessage(
+      @Body() body: PatchMessagesDto,
+      @Param('messageId', ParseBigintPipe) messageId: bigint,
+      @SessionUserId() userId: bigint
+  ) {
     const newMessage = body.message;
-    await this.chatsService.updMessage(messageId, newMessage)
+    await this.chatsService.updMessage(userId, messageId, newMessage)
   }
 
   @Get("/message")

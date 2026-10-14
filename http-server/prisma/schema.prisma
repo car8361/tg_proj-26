@@ -18,11 +18,11 @@ model User {
   username String @unique @db.VarChar(64)
   password String @db.VarChar(255)
 
-  email_codes   Email_code[]   @relation("email_codes_user")
-  friends_user1 Relation[]     @relation("friends_user1")
-  friends_user2 Relation[]     @relation("friends_user2")
-  chatUsers     Chat_user[]
-  chatMessages  Chat_message[]
+  user_email_code_reference      Email_code[]   @relation("email_codes_user_reference")
+  user_relation_sender_reference Relation[]     @relation("relation_sender_id_reference")
+  user_relation_target_reference Relation[]     @relation("relation_target_id_reference")
+  user_chat_user_rr              Chat_user[]
+  user_chat_messager_rr          Chat_message[]
 
   @@map("users")
 }
@@ -36,7 +36,7 @@ model Email_code {
   created_at DateTime @default(now()) @db.Timestamptz(3)
   due_until  DateTime @default(dbgenerated("now() + interval '5 minutes' "))
 
-  user User @relation("email_codes_user", fields: [user_id], references: [id], onDelete: Cascade)
+  email_code_user_reference User @relation("email_codes_user_reference", fields: [user_id], references: [id], onDelete: Cascade)
 
   @@map("email_codes")
 }
@@ -45,8 +45,8 @@ model Chat {
   id         BigInt   @id @default(autoincrement())
   created_at DateTime @default(now()) @db.Timestamptz(3)
 
-  chatUsers    Chat_user[]
-  chatMessages Chat_message[]
+  chat_chat_user_reference    Chat_user[]
+  chat_chat_message_reference Chat_message[]
 
   @@map("chats")
 }
@@ -57,8 +57,8 @@ model Chat_user {
   chat_id    BigInt
   created_at DateTime @default(now()) @db.Timestamptz(3)
 
-  chat_user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  chat      Chat @relation(fields: [chat_id], references: [id], onDelete: Cascade)
+  chat_user_user_reference User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  chat_user_chat_reference Chat @relation(fields: [chat_id], references: [id], onDelete: Cascade)
 
   @@map("chat_users")
 }
@@ -70,8 +70,8 @@ model Chat_message {
   msg        String   @db.VarChar(500)
   created_at DateTime @default(now()) @db.Timestamptz(3)
 
-  message_owner  User @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  chat_reference Chat @relation(fields: [chat_id], references: [id], onDelete: Cascade)
+  chat_message_user_reference User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  chat_message_chat_reference Chat @relation(fields: [chat_id], references: [id], onDelete: Cascade)
 
   @@map("chat_messages")
 }
@@ -92,14 +92,14 @@ model Friend_request {
 
 model Relation {
   id         BigInt       @id @default(autoincrement())
-  owner_id   BigInt
+  sender_id  BigInt
   target_id  BigInt
   relation   RelationType
   created_at DateTime     @default(now()) @db.Timestamptz(3)
 
-  user1 User @relation("friends_user1", fields: [owner_id], references: [id])
-  user2 User @relation("friends_user2", fields: [target_id], references: [id])
+  relation_sender_reference User @relation("relation_sender_id_reference", fields: [sender_id], references: [id])
+  relation_target_reference User @relation("relation_target_id_reference", fields: [target_id], references: [id])
 
-  @@unique([owner_id, target_id])
+  @@unique([sender_id, target_id])
   @@map("relations")
 }
