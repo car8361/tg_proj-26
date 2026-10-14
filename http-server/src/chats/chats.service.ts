@@ -37,4 +37,34 @@ export class ChatsService {
 		}
 		return await this.gateway.broadcastMessage(roomIds, senderName, message);
 	}
+
+	async delMessage() {
+
+	}
+
+	async updMessage(messageId: bigint, newMessage: string) {
+		try {
+			await this.conn.chat_message.update({where});
+		} catch (err) {
+
+		}
+	}
+
+	async getMessages(chatId: bigint, messageId: bigint, amount: number) {
+		const msgs = this.conn.chat_message.findMany({
+			where: { chat_id: chatId, id: {lt: messageId} },
+			orderBy: { id: "desc"},
+			take: amount,
+			select: {
+				id: true,
+				chat_id: true,
+				message_owner: {
+					select: {username: true}
+				},
+				msg: true,
+				created_at: true
+			}
+		})
+		return msgs;
+	}
 }

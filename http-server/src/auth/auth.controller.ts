@@ -28,7 +28,7 @@ export class AuthController {
     const { identifier, password } = body;
     const user = await this.authService.loginUser(identifier, password);
     await new Promise<void>((resolve, reject) => {
-      req.session.regenerate((err) => (err ? reject(err) : resolve()));
+      req.session.regenerate((err: Error) => (err ? reject(err) : resolve()));
     });
     this.authService.sendMailCode(user.email!, user.id!);
     req.session.userId = user.id;
@@ -63,7 +63,7 @@ export class AuthController {
   ) {
     await this.authService.deleteUser(userId);
     await new Promise<void>((resolve, reject) => {
-      req.session.destroy((err) => {
+      req.session.destroy((err: Error) => {
         if (err) reject(err);
         else resolve();
       });
