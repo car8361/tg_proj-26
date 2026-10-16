@@ -13,7 +13,6 @@ import { MailerService } from '../mailer/mailer.service.js';
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly mailer: MailerService,
   ) {}
 
   @Post('register')
@@ -33,6 +32,7 @@ export class AuthController {
     this.authService.sendMailCode(user.email!, user.id!);
     req.session.userId = user.id;
     req.session.verified = false;
+    req.session.username = user.username;
     return user;
   }
 

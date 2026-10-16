@@ -5,6 +5,7 @@ import {IsChatOwner, IsMessageOwner} from "./chats.guard.js";
 import {SessionVerified} from "../auth/auth.guard.js";
 import {SessionUserId} from "../common/decorators/session-user-id/session-user-id.decorator.js";
 import {ParseBigintPipe} from "../common/decorators/parse-bigint-pipe/parse-bigint-pipe.decorator.js";
+import {SessionUsername} from "../common/decorators/session-username/session-username.decorator.js";
 
 @Controller('chats')
 @UseGuards(SessionVerified)
@@ -12,8 +13,8 @@ export class ChatsController {
   constructor(private readonly chatsService: ChatsService) {}
 
   @Post("/message")
-  async postMessage(@Body() body: MessageDto, @SessionUserId() userId: bigint) {
-    return this.chatsService.handleMessage(userId, body.chatId, body.message);
+  async postMessage(@Body() body: MessageDto, @SessionUserId() userId: bigint, @SessionUsername() username: string) {
+    return this.chatsService.handleMessage(userId, body.chatId, username, body.message);
   }
 
   @Delete("/message/:messageId")

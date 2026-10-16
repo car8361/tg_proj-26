@@ -18,10 +18,12 @@ model User {
   username String @unique @db.VarChar(64)
   password String @db.VarChar(255)
 
-  user_email_code_reference      Email_code[]   @relation("email_codes_user_reference")
-  user_relation_sender_reference Relation[]     @relation("relation_sender_id_reference")
-  user_relation_target_reference Relation[]     @relation("relation_target_id_reference")
-  user_chat_reference            Chat[]
+  user_email_code_reference      Email_code[]     @relation("email_codes_user_reference")
+  user_relation_sender_reference Relation[]       @relation("relation_sender_reference")
+  user_relation_target_reference Relation[]       @relation("relation_target_reference")
+  user_chat_rr                   Chat[]
+  friend_request_sender_rr       Friend_request[] @relation("friend_request_sender_reference")
+  friend_request_target_rr       Friend_request[] @relation("friend_request_target_reference")
   user_chat_user_rr              Chat_user[]
   user_chat_messager_rr          Chat_message[]
 
@@ -88,9 +90,12 @@ enum RelationType {
 
 model Friend_request {
   id         BigInt   @id @default(autoincrement())
-  owner_id   BigInt
+  sender_id  BigInt
   target_id  BigInt
   created_at DateTime @default(now()) @db.Timestamptz(3)
+
+  friend_request_sender_reference User @relation("friend_request_sender_reference", fields: [sender_id], references: [id])
+  friend_request_target_reference User @relation("friend_request_target_reference", fields: [target_id], references: [id])
 
   @@map("friend_requests")
 }
@@ -102,8 +107,8 @@ model Relation {
   relation   RelationType
   created_at DateTime     @default(now()) @db.Timestamptz(3)
 
-  relation_sender_reference User @relation("relation_sender_id_reference", fields: [sender_id], references: [id])
-  relation_target_reference User @relation("relation_target_id_reference", fields: [target_id], references: [id])
+  relation_sender_reference User @relation("relation_sender_reference", fields: [sender_id], references: [id])
+  relation_target_reference User @relation("relation_target_reference", fields: [target_id], references: [id])
 
   @@unique([sender_id, target_id])
   @@map("relations")

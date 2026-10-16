@@ -1,4 +1,4 @@
-import {BadRequestException, HttpException, Injectable, NotFoundException} from '@nestjs/common';
+import {BadRequestException, ForbiddenException, HttpException, Injectable, NotFoundException} from '@nestjs/common';
 import {PrismaService} from "../prisma/prisma.service.js";
 import {Prisma} from "../generated/prisma/client.js";
 import {ChatsGateway} from "./chats.gateway.js";
@@ -7,12 +7,12 @@ import {ChatsGateway} from "./chats.gateway.js";
 export class ChatsService {
 	constructor(private readonly conn: PrismaService, private readonly gateway: ChatsGateway) {}
 
-	async handleMessage(userId: bigint, chatId: bigint, message: string) {
+	async handleMessage(userId: bigint, chatId: bigint, username: string, message: string) {
 		const isApart = await this.conn.chat_user.findFirst({
 			where: { user_id: userId, chat_id: chatId },
 		})
 		if (!isApart) {
-			throw new HttpException("User not apart of chat", 403);
+			throw new ForbiddenException("User not apart of chat");
 		}
 		await this.conn.chat_message.create({
 			data: {user_id: userId, chat_id: chatId, msg: message},
@@ -27,15 +27,8 @@ export class ChatsService {
 			where: { chat_id: chatId },
 			select: { user_id: true, chat_user_user_reference: true }
 		})
-		let roomIds = [];
-		let senderName = "";
-		for (let i = 0; i < users.length; i++) {
-			roomIds.push(`chat:${users[i].user_id}`);
-			if (users[i].chat_user_user_reference.id === userId) {
-				senderName = users[i].chat_user_user_reference.username;
-			}
-		}
-		this.gateway.emitMessageToRoom(roomIds, "chats:post", {senderName, userId, message});
+		let roomIds = this.usersRowToEmitField(users);
+		this.gateway.emitMessageToRoom(roomIds, "chats:post", {senderName: username, userId, message});
 	}
 
 	async delMessage(messageId: bigint) {
@@ -51,10 +44,7 @@ export class ChatsService {
 				where: { chat_id: rowChatMessages.chat_message_chat_reference.id },
 				select: { user_id: true }
 			})
-			let userIds = [];
-			for (let i = 0; i < rowsGetReceiverUsers.length; i++) {
-				userIds.push(rowsGetReceiverUsers[i].user_id.toString());
-			}
+			let userIds = this.usersRowToEmitField(rowsGetReceiverUsers);
 			await this.conn.chat_message.delete({
 				where: {id: messageId}
 			})
