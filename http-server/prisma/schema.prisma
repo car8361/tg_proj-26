@@ -21,6 +21,7 @@ model User {
   user_email_code_reference      Email_code[]   @relation("email_codes_user_reference")
   user_relation_sender_reference Relation[]     @relation("relation_sender_id_reference")
   user_relation_target_reference Relation[]     @relation("relation_target_id_reference")
+  user_chat_reference            Chat[]
   user_chat_user_rr              Chat_user[]
   user_chat_messager_rr          Chat_message[]
 
@@ -42,8 +43,12 @@ model Email_code {
 }
 
 model Chat {
-  id         BigInt   @id @default(autoincrement())
-  created_at DateTime @default(now()) @db.Timestamptz(3)
+  id            BigInt   @id @default(autoincrement())
+  chat_name     String   @default("Nový chat")
+  chat_owner_id BigInt
+  created_at    DateTime @default(now()) @db.Timestamptz(3)
+
+  chat_user_reference User @relation(fields: [chat_owner_id], references: [id])
 
   chat_chat_user_reference    Chat_user[]
   chat_chat_message_reference Chat_message[]

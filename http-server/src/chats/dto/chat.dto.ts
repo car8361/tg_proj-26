@@ -1,5 +1,6 @@
 import { IsId } from "../../common/decorators/is-id/is-id.decorator.js"
 import {IsNotEmpty, IsString, Length} from "class-validator";
+import {Optional} from "@nestjs/common";
 
 /**
  * Přijímá:
@@ -38,4 +39,20 @@ export class GetMessagesDto {
 export class PatchMessagesDto {
 	@Length(1, 500)
 	message: string;
+}
+
+/**
+ * Přijímá
+ * - **name**
+ * 
+ * Optional:
+ * - newOwnerId
+ */
+
+export class UpdateChatDto {
+	@Length(1, 64)
+	name: string;
+	@IsId()
+	@Optional()
+	newOwnerId: bigint;
 }

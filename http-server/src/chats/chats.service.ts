@@ -1,4 +1,4 @@
-import {BadRequestException, HttpException, Injectable} from '@nestjs/common';
+import {BadRequestException, HttpException, Injectable, NotFoundException} from '@nestjs/common';
 import {PrismaService} from "../prisma/prisma.service.js";
 import {Prisma} from "../generated/prisma/client.js";
 import {ChatsGateway} from "./chats.gateway.js";
@@ -40,14 +40,35 @@ export class ChatsService {
 
 	async delMessage(messageId: bigint) {
 		try {
-			const rowsChatUsers = await this.conn.chat({
-				where: {  }
+			const rowChatMessages = await this.conn.chat_message.findFirstOrThrow({
+				where: { id: messageId },
+				select: { chat_message_chat_reference: {
+					select: { id: true }
+					}
+				}
 			})
-			const rowDeleteMsg = await this.conn.chat_message.delete({
+			const rowsGetReceiverUsers = await this.conn.chat_user.findMany({
+				where: { chat_id: rowChatMessages.chat_message_chat_reference.id },
+				select: { user_id: true }
+			})
+			let userIds = [];
+			for (let i = 0; i < rowsGetReceiverUsers.length; i++) {
+				userIds.push(rowsGetReceiverUsers[i].user_id.toString());
+			}
+			await this.conn.chat_message.delete({
 				where: {id: messageId}
 			})
-		} catch (err) {
+			this.gateway.emitMessageToRoom(userIds, "chats:delete", {
+				messageId: messageId,
+			});
 
+		} catch (err) {
+			if (err instanceof Prisma.PrismaClientKnownRequestError) {
+				if (err.code === "P2025") {
+					throw new NotFoundException("Invalid message ID");
+				}
+			}
+			throw err;
 		}
 	}
 
@@ -67,7 +88,7 @@ export class ChatsService {
 					},
 			})
 
-			if (!rowChatId) { throw new HttpException("No chatId found", 409); } //ON DELETE CASCADE => CHAT ID NOT NULL (prisma), only for prisma to work
+			if (!rowChatId) { throw new NotFoundException("Invalid message"); } //ON DELETE CASCADE => CHAT ID NOT NULL (prisma), only for prisma to work
 
 			const rowsUserIds = await this.conn.chat_user.findMany({
 				where: { chat_id: rowChatId.chat_message_chat_reference.id },
@@ -81,7 +102,7 @@ export class ChatsService {
 		} catch (err) {
 			if (err instanceof Prisma.PrismaClientKnownRequestError) {
 				if (err.code === "P2025") {
-					throw new BadRequestException("Invalid message ID");
+					throw new NotFoundException("Invalid message ID");
 				}
 				throw err;
 			}
@@ -104,5 +125,45 @@ export class ChatsService {
 			}
 		})
 		return msgs;
+	}
+
+	async createChat(userId: bigint) {
+		return this.conn.chat.create({data: {chat_owner_id: userId}});
+	}
+
+	async updateChat(chatId: bigint, newOwnerId: bigint, name: string) {
+		await this.conn.chat.update({
+			where: {id: chatId},
+			data: {name: name, chat_owner_id: newOwnerId},
+		})
+		const userIdRows = await this.conn.chat_user.findMany({
+			where: { chat_id: chatId },
+			select: { user_id: true}
+		});
+		const roomIds = this.usersRowToEmitField(userIdRows);
+		return this.gateway.emitMessageToRoom(roomIds, "chats:update", {chatId, name})
+	}
+
+	async deleteChat(chatId: bigint) {
+		try {
+			await this.conn.chat.delete({
+				where: {id: chatId},
+			})
+			const userIdsRows = await this.conn.chat_user.findMany({
+				where: { chat_id: chatId },
+			})
+			const roomIds = this.usersRowToEmitField(userIdsRows);
+			this.gateway.emitMessageToRoom(roomIds, "chats:delete", {chatId})
+		} catch {
+			throw new NotFoundException("Invalid chat ID");
+		}
+	}
+
+	private usersRowToEmitField(rowsUserIds: { user_id: bigint }[]) {
+		let roomIds = [];
+		for (let i = 0; i < rowsUserIds.length; i++) {
+			roomIds.push(`chat:${rowsUserIds[i]}`);
+		}
+		return roomIds;
 	}
 }

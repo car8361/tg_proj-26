@@ -1,18 +1,17 @@
 import {Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards} from '@nestjs/common';
 import { ChatsService } from './chats.service.js';
-import {MessageDto, GetMessagesDto, PatchMessagesDto} from "./dto/chat.dto.js";
-import { IsMessageOwner } from "./chats.guard.js";
+import {MessageDto, GetMessagesDto, PatchMessagesDto, UpdateChatDto} from "./dto/chat.dto.js";
+import {IsChatOwner, IsMessageOwner} from "./chats.guard.js";
 import {SessionVerified} from "../auth/auth.guard.js";
-import type { Request } from 'express';
 import {SessionUserId} from "../common/decorators/session-user-id/session-user-id.decorator.js";
 import {ParseBigintPipe} from "../common/decorators/parse-bigint-pipe/parse-bigint-pipe.decorator.js";
 
 @Controller('chats')
+@UseGuards(SessionVerified)
 export class ChatsController {
   constructor(private readonly chatsService: ChatsService) {}
 
   @Post("/message")
-  @UseGuards(SessionVerified)
   async postMessage(@Body() body: MessageDto, @SessionUserId() userId: bigint) {
     return this.chatsService.handleMessage(userId, body.chatId, body.message);
   }
@@ -39,5 +38,23 @@ export class ChatsController {
     const { chatId, messageId } = body;
     const amount = 50;
     return await this.chatsService.getMessages(chatId, messageId, amount);
+  }
+
+  @Post("/")
+  async createChat(@SessionUserId() userId: bigint) {
+    return await this.chatsService.createChat(userId);
+  }
+
+  @Patch("/:chatId")
+  @UseGuards(IsChatOwner)
+  async updateChat(@Body() body: UpdateChatDto, @SessionUserId() userId: bigint, @Param('chatId', ParseBigintPipe) chatId: bigint) {
+    let { name, newOwnerId } = body;
+    return await this.chatsService.updateChat(chatId, newOwnerId ?? userId, name);
+  }
+
+  @Delete("/:chatId")
+  @UseGuards(IsChatOwner)
+  async deleteChat(@Param('chatId', ParseBigintPipe) chatId: bigint) {
+    return await this.chatsService.deleteChat(chatId);
   }
 }

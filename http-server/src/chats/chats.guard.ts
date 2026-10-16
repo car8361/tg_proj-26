@@ -6,7 +6,7 @@ import {PrismaService} from "../prisma/prisma.service.js";
  *
  * přijímá:
  * - **messageId** z params,
- * - **userId** z session
+ * - **session data**: verified, userId
  */
 
 @Injectable()
@@ -14,12 +14,12 @@ export class IsMessageOwner implements CanActivate {
 	constructor(private readonly conn: PrismaService) {}
 
 	async canActivate(context: ExecutionContext) {
-		const request = context.switchToHttp().getRequest();
+		const req = context.switchToHttp().getRequest();
 
-		const messageId = request.params.messageId;
-		const userId = request.session.userId;
+		const messageId = req.params.messageId;
+		const {userId, verified} = req.session;
 
-		if (!messageId || !userId) {
+		if (!messageId || !verified) {
 			return false;
 		}
 
@@ -33,5 +33,38 @@ export class IsMessageOwner implements CanActivate {
 		}
 
 		return cmd.user_id === userId;
+	}
+}
+
+/**
+ * Předá request pokud je vlastník chatu
+ *
+ * přijímá:
+ * - **chatId** - z params
+ * - **session data**: verified, userId
+ */
+@Injectable()
+export class IsChatOwner implements CanActivate {
+	constructor(private readonly conn: PrismaService) {}
+
+	async canActivate(context: ExecutionContext) {
+		const req = context.switchToHttp().getRequest();
+		const {userId, verified} = req.session;
+		const chatId = req.params.chatId;
+
+		if (!verified || !chatId) {
+			return false;
+		}
+
+		try {
+			await this.conn.chat.findFirstOrThrow({
+				where: {chat_owner_id: userId, id: chatId},
+				select: {id: true}
+			})
+		} catch {
+			return false;
+		}
+
+		return true;
 	}
 }
