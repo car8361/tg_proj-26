@@ -8,6 +8,7 @@ import NotFound from './routes/NotFound'
 import Header from "./components/Header"
 import Footer from "./components/Footer"
 import Home from "./routes/Home"
+import RedirectHome from "./routes/RedirectHome"
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -16,6 +17,7 @@ createRoot(document.getElementById('root')!).render(
             <Header />
             <main className="flex flex-1 flex-col">
                 <Routes>
+                    <Route path="" element={<RedirectHome/>}/>
                     <Route path="login" element={<Login/>}/>
                     <Route path="register" element={<Register/>}/>
                     <Route path="home" element={<Home/>}/>
