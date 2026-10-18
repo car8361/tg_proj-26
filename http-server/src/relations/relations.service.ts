@@ -3,28 +3,36 @@ import { PrismaService } from "../prisma/prisma.service.js";
 import {Prisma} from "../generated/prisma/client.js";
 import {PrismaClientKnownRequestError} from "@prisma/client/runtime/client";
 
+
+//POZOR ZAJISTIT NEDUPLICITNÍ POZVÁNKY + KAMARÁDY / BLOKACE
+
 @Injectable()
 export class RelationsService {
 	constructor(private readonly conn: PrismaService) {}
 
-	async getPendingInvites(userId: bigint) {
-		return this.conn.friend_request.findMany({
-			where: { target_id: userId },
-			select: { sender_id: true, friend_request_sender_reference: { select: { username: true } } }
+	async getIngoingInvites(userId: bigint) {
+		return this.conn.relation.findMany({
+			where: { owner_id: userId, relationship: "INVITE_INGOING" },
+			select: { other_id: true, friend_request_sender_reference: { select: { username: true } } }
 		})
 	}
 
 	async getOutgoingInvites(userId: bigint) {
-		return this.conn.friend_request.findMany({
-			where: { sender_id: userId },
-			select: { target_id: true, friend_request_target_reference: { select: { username: true } } }
+		return this.conn.relation.findMany({
+			where: { owner_id: userId, relationship: "INVITE_OUTGOING" },
+			select: { other_id: true, friend_request_target_reference: { select: { username: true } } }
 		})
 	}
 
 	async createInvite(senderId: bigint, targetId: bigint) {
 		try {
-			this.conn.friend_request.create({
-				data: { sender_id: senderId, target_id: targetId}
+			await this.conn.$transaction(async (t) => {
+				await t.relation.create({
+					data: { owner_id: senderId, other_id: targetId, relationship: "INVITE_OUTGOING" }
+				})
+				await t.relation.create({
+					data: { owner_id: targetId, other_id: senderId, relationship: "INVITE_INGOING" }
+				})
 			})
 		} catch (err) {
 			if (err instanceof Prisma.PrismaClientKnownRequestError) {
@@ -38,18 +46,24 @@ export class RelationsService {
 
 	async deleteInvite(userId: bigint, inviteId: bigint) {
 		try {
-			this.conn.friend_request.delete({
-				where: {
-					id: inviteId,
-					OR: [
-						{sender_id: userId},
-						{target_id: userId}
-					]
-				},
+			await this.conn.$transaction(async (t) => {
+				const rowOtherId = await t.relation.delete({
+					where: { owner_id: userId, id: inviteId, OR: [{relationship: "INVITE_OUTGOING"}, {relationship: "INVITE_INGOING"}] },
+					select: { other_id: true }
+				})
+				await t.relation.delete({
+					where: {
+						owner_id_other_id: { owner_id: rowOtherId.other_id, other_id: userId },
+						OR: [{relationship: "INVITE_OUTGOING"}, {relationship: "INVITE_INGOING"}]
+					}
+				})
 			})
 		} catch (err) {
 			if (err instanceof PrismaClientKnownRequestError) {
-				if (err.code = "P2025") {
+				if (err.code === "P2002") {
+					throw new ConflictException("You already have a relation with this person") //race condition? Needs to be checked
+				}
+				if (err.code === "P2025") {
 					throw new NotFoundException("Friend request not found")
 				}
 				throw err;
@@ -57,29 +71,112 @@ export class RelationsService {
 		}
 	}
 
-	async acceptInvite(userId: bigint, inviteId: bigint) {
+	async acceptInvite(userId: bigint, inviteId: bigint) { //rozbíjí logiku - nelze hledat podle inviteId
 		try {
-			
+			await this.conn.$transaction(async (t) => {
+				const rowOtherId = await t.relation.update({
+					where: { owner_id: userId, id: inviteId, relationship: "INVITE_INGOING"},
+					data: { relationship: "FRIEND"},
+					select: { other_id: true }
+				})
+				 await t.relation.update({
+					where: { owner_id_other_id: { owner_id: rowOtherId.other_id, other_id: userId }, relationship: "INVITE_OUTGOING" },
+					data: { relationship: "FRIEND"}
+				})
+			})
 		} catch (err) {
-
-		} finally {
-
+			if (err instanceof PrismaClientKnownRequestError) {
+				if (err.code === "P2002") {
+					throw new ConflictException("You already have a relation with this person") //race condition? Needs to be checked
+				}
+				if (err.code === "P2025") {
+					throw new NotFoundException("Friend request not found")
+				}
+			}
+			throw err;
 		}
 	}
 
 	async myFriends(userId: bigint) {
-
+		return this.conn.relation.findMany({
+			where: {
+				relationship: 'FRIEND',
+				OR: [
+					{ owner_id: userId },
+					{ other_id: userId }
+				]
+			}
+		})
 	}
 
-	async deleteFriend(userId: bigint, friendId: bigint) {
-
+	async deleteFriend(userId: bigint, relationId: bigint) {
+		try {
+			await this.conn.$transaction(async (t) => {
+				const otherIdRow = await t.relation.delete({
+					where: {
+						relationship: 'FRIEND',
+						owner_id: userId,
+						id: relationId,
+					},
+					select: { other_id: true }
+				})
+				await t.relation.delete({
+					where: {
+						relationship: 'FRIEND',
+						owner_id_other_id: {
+							owner_id: otherIdRow.other_id,
+							other_id: userId
+						}
+					}
+				})
+			})
+		} catch (err) {
+			if (err instanceof PrismaClientKnownRequestError) {
+				if (err.code = "P2025") {
+					throw new ConflictException("Friend not found")
+				}
+			}
+			throw err;
+		}
 	}
 
 	async block(userId: bigint, targetId: bigint) {
-
+		try {
+			await this.conn.$transaction(async (t) => {
+				await t.relation.deleteMany({
+					where: { OR: [
+							{owner_id: userId, other_id: targetId, relationship: { in: ["FRIEND", "INVITE_OUTGOING", "INVITE_INGOING"] }},
+							{owner_id: targetId, other_id: userId, relationship: { in: ["FRIEND", "INVITE_INGOING", "INVITE_INGOING"] }},
+						]},
+				})
+				await t.relation.create({
+					data: {
+						owner_id: userId,
+						other_id: targetId,
+						relationship: "BLOCKED",
+					}
+				})
+			})
+		} catch (err) {
+			//no error handling idea here
+			throw err;
+		}
 	}
 
 	async unblock(userId: bigint, targetId: bigint) {
-
+		try {
+			await this.conn.relation.delete({
+				where: {
+					owner_id_other_id: { owner_id: userId, other_id: targetId, relationship: "BLOCKED" },
+				}
+			})
+		} catch (err) {
+			if (err instanceof PrismaClientKnownRequestError) {
+				if (err.code === "P2025") {
+					throw new NotFoundException("User not blocked")
+				}
+			}
+			throw err;
+		}
 	}
 }

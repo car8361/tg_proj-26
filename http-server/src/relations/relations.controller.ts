@@ -1,4 +1,4 @@
-import {Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards} from '@nestjs/common';
+import {Body, Controller, Delete, Get, Patch, Post, UseGuards} from '@nestjs/common';
 import { RelationsService } from './relations.service.js';
 import {SessionVerified} from "../auth/auth.guard.js";
 import {SessionUserId} from "../common/decorators/session-user-id/session-user-id.decorator.js";
@@ -12,7 +12,7 @@ export class RelationsController {
 
   @Get('invites/pending')
   async getPendingInvites(@SessionUserId() userId: bigint) {
-    return await this.relationsService.getPendingInvites(userId);
+    return await this.relationsService.getIngoingInvites(userId);
   }
 
   @Get('invites/outgoing')
