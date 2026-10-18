@@ -23,7 +23,7 @@ function Input({
         <div className="flex flex-col">
             <label 
             htmlFor={id}
-            className="my-1">
+            className="my-1 text-2xl">
             {label}
             </label>
             <input
@@ -32,7 +32,7 @@ function Input({
             type={type} 
             name={name}
             id={id}
-            className="transition-colors bg-white border rounded-sm px-1 pb-1 hover:bg-blue-50s hover:bg-neutral-100">
+            className="transition-colors bg-white border rounded-sm px-1 text-2xl pb-1 hover:bg-blue-50s hover:bg-neutral-100">
             </input>
             <label 
             htmlFor={id}

@@ -15,19 +15,19 @@ function Login() {
         event.preventDefault();
         const userInputs = Object.fromEntries(new FormData(event.currentTarget));
         if (userInputs.password !== userInputs.confirmPassword) {
-            return setPassConfErr("Neshoda hesel")
+            return setPassConfErr("Passwords don't match");
         }
         if (userInputs.username.toString().length < 3) {
-            return setUserErr("Vyplňte uživatelské jméno");
+            return setUserErr("Please fill in the username");
         }
         if (userInputs.email.toString().length < 3) {
-            return setEmailErr("Vyplňte e-mail")
+            return setEmailErr("Please fill in the e-mail")
         }
         if (userInputs.password.toString().length < 8) {
-            return setPassErr("Vyplňte heslo");
+            return setPassErr("Please fill in the password");
         }
         if (errMsg.length > 0 || userErr.length > 0 || emailErr.length > 0 || passErr.length > 0 || passConfErr.length > 0) {
-            setErrMsg("Nejprve vyřeš chyby 😨")
+            setErrMsg("Fix all the errors first 😨")
         }
         fetch("/api/auth/register", {
             method: "POST",
@@ -42,11 +42,11 @@ function Login() {
             } 
             if (status >= 400 && status < 500) {
                 if (status === 409) {
-                    return setErrMsg("Zabrané uživatelské jméno nebo e-mail")
+                    return setErrMsg("Username or e-mail already taken")
                 }
-                setErrMsg("Nesprávné Registrační údaje");
+                setErrMsg("Incorrect registration data");
             } else if (status >= 500) {
-                setErrMsg("Chyba na serveru")
+                setErrMsg("Server error")
             } 
         });
     }
@@ -74,16 +74,16 @@ function Login() {
 
     const userInputChanged = (value: string) => {
         if ((value.length < 3) && (value.length !== 0) || value.length > 64) {
-            return setUserErr("Musí obsahovat 3 - 64 povolených znaků");
+            return setUserErr("Must contain 3 - 64 allowed characters");
         }
         if (/[^a-zA-Z0-9_]/.test(value)) {
-            return setUserErr("Uživatelské jméno obsahuje nepovolené znaky");
+            return setUserErr("Username contains blocked characters");
         }
         //fetch jestli je user volný
         fetch(`/api/auth/user?username=${value}`)
         .then(res => {
             if (res.status === 409) {
-                return setUserErr("Uživatelské jméno zabrené");
+                return setUserErr("Username taken");
             }
         })
     }
@@ -95,33 +95,34 @@ function Login() {
                     return setEmailErr("");
                 }
                 if (res.status === 409) {
-                    return setEmailErr("E-mail již používaný");
+                    return setEmailErr("E-mail already in use");
                 }
                 if (res.status === 400) {
-                    return setEmailErr("Není e-mail");
+                    return setEmailErr("Not an e-mail");
                 }
             })
     }
 
     const passwordInputChanged = (value: string) => {
         if (value.length < 3 || value.length > 64) {
-            return setPassErr("Musí obsahovat 3 - 64 znaků");
+            return setPassErr("Must containt 3 - 64 symbols");
         }
         if (!(/[a-zA-Z]/.test(value) && /[\d]/.test(value) && /[^a-zA-Z0-9]/.test(value))) {
-            return setPassErr("Musí obsahovat 3 - 64 povolených, alespoň 1 písmeno, 1 číslo a 1 symbol");
+            return setPassErr("Must contain 3 - 64 allowed characters, at least 1 letter, 1 number and 1 symbol");
         }
     }
 
     return (
-        <div className="flex min-h-dvh items-center justify-center p-4 w-full md:portrait:items-start md:portrait:pt-40">
-            <form onSubmit={(e) => Register(e)} className="flex flex-col w-full max-w-sm md:portrait:max-w-2xl md:portrait:text-2xl mx-auto md:portrait:pt-[15dvh] rounded-xl">
-                <Input name="username" id="username" label="Jméno" parameters="Musí obsahovat 3 - 64 povolených znaků" placeholder="uzivatel" type="text" errMsg={userErr} inputChanged={inputChanged} />
-                <Input name="email" id="email" label="E-mail" parameters="" placeholder="jmeno@domena.com" type="email" errMsg={emailErr} inputChanged={inputChanged} />
-                <Input name="password" id="password" label="Heslo" parameters="Musí obsahovat 3 - 64 povolených, alespoň 1 písmeno, 1 číslo a 1 symbol" placeholder="●●●●●●●●" type="password" errMsg={passErr} inputChanged={inputChanged} />
-                <Input name="confirmPassword" id="confirmPassword" label="Heslo znovu" parameters="" placeholder="●●●●●●●●" type="password" errMsg={passConfErr} inputChanged={inputChanged}/>
-                <button id="button" type="submit" className="transition-colors bg-black mt-4 rounded-sm cursor-pointer text-white py-1 hover:bg-gray-800">Registrovat</button>
+        <div className="flex flex-col m-auto p-4 w-full">
+            <h1 className="m-auto text-5xl text-red-500">Hello, Terra! Please don't register an account this demo - it doesn't work and I want to work on my sites security first, thanks. </h1>
+            <form onSubmit={(e) => Register(e)} className="flex flex-col w-full max-w-lg mx-auto rounded-xl">
+                <Input name="username" id="username" label="Username" parameters="Must contain 3 - 64 allowed symbols" placeholder="username" type="text" errMsg={userErr} inputChanged={inputChanged} />
+                <Input name="email" id="email" label="E-mail" parameters="" placeholder="name@domain.com" type="email" errMsg={emailErr} inputChanged={inputChanged} />
+                <Input name="password" id="password" label="Password" parameters="Must containt 3 - 64 allowed characters, at least 1 letter, 1 number a 1 symbol" placeholder="●●●●●●●●" type="password" errMsg={passErr} inputChanged={inputChanged} />
+                <Input name="confirmPassword" id="confirmPassword" label="Password confirm" parameters="" placeholder="●●●●●●●●" type="password" errMsg={passConfErr} inputChanged={inputChanged}/>
+                <button id="button" type="submit" className="transition-colors bg-black mt-4 rounded-sm cursor-pointer text-white py-1 hover:bg-gray-800 text-2xl   ">Register</button>
                 <p className="self-center text-red-600 text-lg">{errMsg}</p>
-                <a href="/login" className="transition-colors mt-1 text-blue-500 justify-end hover:text-blue-300">Máte již účet?</a>
+                <a href="/login" className="transition-colors mt-1 text-blue-500 justify-end hover:text-blue-300 text-2xl">Already have an account?</a>
             </form>
         </div>
     )
