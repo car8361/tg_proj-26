@@ -9,6 +9,7 @@ import Header from "./components/Header"
 import Footer from "./components/Footer"
 import Home from "./routes/Home"
 import RedirectHome from "./routes/RedirectHome"
+import VerifyOverlay from "./components/VerifyOverlay.tsx";
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -16,6 +17,7 @@ createRoot(document.getElementById('root')!).render(
         <div className="flex flex-col min-h-dvh">
             <Header />
             <main className="flex flex-1 flex-col">
+                <VerifyOverlay/>
                 <Routes>
                     <Route path="" element={<RedirectHome/>}/>
                     <Route path="login" element={<Login/>}/>
