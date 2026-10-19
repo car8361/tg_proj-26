@@ -7,7 +7,6 @@ import { SessionUID, SessionVerified } from './auth.guard.js';
 import { SessionUserId } from '../common/decorators/session-user-id/session-user-id.decorator.js';
 import {EmailDto, UsernameDto} from './dto/auth.dto.js';
 import { $2faDto } from './dto/$2fa.dto.js';
-import { MailerService } from '../mailer/mailer.service.js';
 
 @Controller('auth')
 export class AuthController {
@@ -18,7 +17,7 @@ export class AuthController {
   @Post('register')
   register(@Body() body: RegisterDto, @Ip() ip: string) {
     const { username, email, password } = body;
-    return this.authService.registerUser(username, email, password, ip);
+    return JSON.stringify(this.authService.registerUser(username, email, password, ip));
   }
 
   @Post('login')
@@ -30,10 +29,10 @@ export class AuthController {
       req.session.regenerate((err: Error) => (err ? reject(err) : resolve()));
     });
     this.authService.sendMailCode(user.email!, user.id!);
-    req.session.userId = user.id;
-    req.session.verified = false;
-    req.session.username = user.username;
-    return user;
+    req.session.userId = String(user.id);
+    req.session.verified = String(false);
+    req.session.username = String(user.username);
+    return;
   }
 
   @Post('2fa')
@@ -92,6 +91,6 @@ export class AuthController {
 
   @Get('me')
   async me(@Req() req: Request, @Res() res: Response) {
-    return res.status(200).json({userId: req.session.userId, verified: req.session.verified});
+    return res.status(200).json({userId: req.session.userId, verified: req.session.verified, username: req.session.username});
   }
 }

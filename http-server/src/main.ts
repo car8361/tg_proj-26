@@ -15,7 +15,7 @@ async function bootstrap() {
   app.setGlobalPrefix("api");
   app.use(json());
   app.enableCors({
-    origin: "http://localhost:5173",
+    origin: process.env.FRONTEND_PORT ?? "http://localhost:80",
     credentials: true
   })
   app.use(session({
