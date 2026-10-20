@@ -42,12 +42,12 @@ function Login() {
             } 
             if (status >= 400 && status < 500) {
                 if (status === 409) {
-                    return setErrMsg("Username or e-mail already taken")
+                    setErrMsg("Username or e-mail already taken")
                 }
                 setErrMsg("Incorrect registration data");
             } else if (status >= 500) {
                 setErrMsg("Server error")
-            } 
+            }
         });
     }
 
