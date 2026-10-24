@@ -1,5 +1,5 @@
 import { IntersectionType } from "@nestjs/mapped-types";
-import { UsernameDto, PasswordDto, EmailDto } from "./auth.dto.js";
+import { UsernameDto, PasswordDto, EmailDto, ConfirmPasswordDto } from "./auth.dto.js";
 
 /**
  * Přijímá:
@@ -8,4 +8,4 @@ import { UsernameDto, PasswordDto, EmailDto } from "./auth.dto.js";
  * - password
  */
 
-export class RegisterDto extends IntersectionType(UsernameDto, EmailDto, PasswordDto) {}
+export class RegisterDto extends IntersectionType(UsernameDto, EmailDto, PasswordDto, ConfirmPasswordDto) {}

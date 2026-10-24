@@ -24,20 +24,27 @@ export class RelationsService {
 		})
 	}
 
-	async createInvite(senderId: bigint, targetId: bigint) {
+	async createInvite(userId: bigint, targetName: string) {
 		try {
+			const other_user = await this.conn.user.findFirstOrThrow({
+				where: { username: targetName },
+				select: { id: true }
+			})
 			await this.conn.$transaction(async (t) => {
 				await t.relation.create({
-					data: { owner_id: senderId, other_id: targetId, relationship: "INVITE_OUTGOING" }
+					data: { owner_id: userId, other_id: other_user.id, relationship: "INVITE_OUTGOING" }
 				})
 				await t.relation.create({
-					data: { owner_id: targetId, other_id: senderId, relationship: "INVITE_INGOING" }
+					data: { owner_id: other_user.id, other_id: userId, relationship: "INVITE_INGOING" }
 				})
 			})
 		} catch (err) {
 			if (err instanceof Prisma.PrismaClientKnownRequestError) {
 				if (err.code = "P2002") { //unique constraint err code
 					throw new ConflictException("Friend request already sent")
+				}
+				if (err.code = "P2025") {
+					throw new NotFoundException("User doesn't exist");
 				}
 			}
 			throw err;
@@ -98,15 +105,27 @@ export class RelationsService {
 	}
 
 	async myFriends(userId: bigint) {
-		return this.conn.relation.findMany({
+		const res = await this.conn.relation.findMany({
 			where: {
 				relationship: 'FRIEND',
 				OR: [
 					{ owner_id: userId },
 					{ other_id: userId }
 				]
+			},
+			select: {
+				relation_owner_user_reference: {select: {username: true, id: true}},
+				relation_other_user_reference: {select: {username: true, id: true}},
 			}
 		})
+		const relations = res.map(res => ({
+			owner_usernames: res.relation_owner_user_reference.username,
+			other_usernames: res.relation_other_user_reference.username,
+			owner_ids: res.relation_owner_user_reference.id,
+			other_ids: res.relation_other_user_reference.id,
+		}))
+
+		return relations;
 	}
 
 	async deleteFriend(userId: bigint, relationId: bigint) {

@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Body, HttpCode, Req, Ip, UseGuards, Res, Query, ConflictException,
-  InternalServerErrorException
+  InternalServerErrorException, Delete
 } from '@nestjs/common';
 import { AuthService } from './auth.service.js';
 import { RegisterDto } from "./dto/register.dto.js";
@@ -18,9 +18,12 @@ export class AuthController {
   ) {}
 
   @Post('register')
-  register(@Body() body: RegisterDto, @Ip() ip: string) {
-    const { username, email, password } = body;
-    return JSON.stringify(this.authService.registerUser(username, email, password, ip));
+  async register(@Body() body: RegisterDto, @Ip() ip: string, @Res() res: Response) {
+    const { username, email, password, confirmPassword } = body;
+    if (password !== confirmPassword) {
+      return res.status(400).json({ok: false, message: "Passwords don't match"});
+    }
+    return res.status(201).json(JSON.stringify((await this.authService.registerUser(username, email, password, ip)).toString()));
   }
 
   @Post('login')
@@ -83,7 +86,7 @@ export class AuthController {
     }
   }
 
-  @Post('delete')
+  @Delete()
   @UseGuards(SessionUID)
   async del(
     @Req() req: Request,
@@ -98,7 +101,7 @@ export class AuthController {
       });
     });
     res.clearCookie('connect.sid');
-    return;
+    return res.status(204).json({ok: true});
   }
 
   @Get('user')

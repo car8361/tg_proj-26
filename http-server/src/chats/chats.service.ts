@@ -117,8 +117,17 @@ export class ChatsService {
 		return msgs;
 	}
 
+	async getChats(userId: bigint) {
+		const res = await this.conn.chat_user.findMany({
+			where: { user_id: userId },
+			select: { chat_user_chat_reference: { select: { chat_name: true }}}
+		});
+		return res.map((r) => r.chat_user_chat_reference.chat_name);
+	}
+
 	async createChat(userId: bigint) {
-		return this.conn.chat.create({data: {chat_owner_id: userId}});
+		const createChat = await this.conn.chat.create({data: {chat_owner_id: userId}});
+		await this.conn.chat_user.create({data: {user_id: userId, chat_id: createChat.id, privilage: "OWNER"}});
 	}
 
 	async updateChat(chatId: bigint, newOwnerId: bigint, name: string) {

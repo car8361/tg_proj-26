@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import Input from "../components/authInput";
-import { useNavigate } from "react-router";
+import {useMutationRegister} from "../queries/auth.ts";
+import { RegisterZod } from "../cacheTypes/auth.ts";
 
 function Login() {
     const [errMsg, setErrMsg] = useState("");
@@ -9,46 +10,18 @@ function Login() {
     const [passErr, setPassErr] = useState("");
     const [passConfErr, setPassConfErr] = useState("");
 
-    const navigate = useNavigate();
+    const registerMut = useMutationRegister(setErrMsg);
 
     const Register = (event: React.SubmitEvent<HTMLFormElement>) => {
         event.preventDefault();
         const userInputs = Object.fromEntries(new FormData(event.currentTarget));
-        if (userInputs.password !== userInputs.confirmPassword) {
-            return setPassConfErr("Passwords don't match");
+        console.log("USER INPUTS: ", userInputs);
+        const result = RegisterZod.safeParse(userInputs);
+        console.log("PARSING RESULT DATA: ", result.data);
+        if (!result.success) {
+            return setErrMsg(result.error.issues[0].message);
         }
-        if (userInputs.username.toString().length < 3) {
-            return setUserErr("Please fill in the username");
-        }
-        if (userInputs.email.toString().length < 3) {
-            return setEmailErr("Please fill in the e-mail")
-        }
-        if (userInputs.password.toString().length < 8) {
-            return setPassErr("Please fill in the password");
-        }
-        if (errMsg.length > 0 || userErr.length > 0 || emailErr.length > 0 || passErr.length > 0 || passConfErr.length > 0) {
-            setErrMsg("Fix all the errors first 😨")
-        }
-        fetch("/api/auth/register", {
-            method: "POST",
-            headers: {"Content-Type": "application/Json"},
-            body: JSON.stringify(userInputs),
-            credentials: "include",
-        })
-        .then(res => {
-            const status = res.status;
-            if (status >= 200 && status <= 299) {
-                navigate("/login");
-            } 
-            if (status >= 400 && status < 500) {
-                if (status === 409) {
-                    setErrMsg("Username or e-mail already taken")
-                }
-                setErrMsg("Incorrect registration data");
-            } else if (status >= 500) {
-                setErrMsg("Server error")
-            }
-        });
+        registerMut.mutate(result.data);
     }
 
     const timeout = useRef<number>(undefined);
@@ -114,7 +87,6 @@ function Login() {
 
     return (
         <div className="flex flex-col m-auto p-4 w-full">
-            <h1 className="m-auto text-5xl text-red-500">Hello, Terra! Please don't register an account this demo - it doesn't work and I want to work on my sites security first, thanks. </h1>
             <form onSubmit={(e) => Register(e)} className="flex flex-col w-full max-w-lg mx-auto rounded-xl">
                 <Input name="username" id="username" label="Username" parameters="Must contain 3 - 64 allowed symbols" placeholder="username" type="text" errMsg={userErr} inputChanged={inputChanged} />
                 <Input name="email" id="email" label="E-mail" parameters="" placeholder="name@domain.com" type="email" errMsg={emailErr} inputChanged={inputChanged} />

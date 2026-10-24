@@ -21,9 +21,9 @@ export class RelationsController {
   }
 
   @Post('invites')
-  async postInvite(@Body() body: InviteDto) {
-    const {senderId, receiverId} = body;
-    return await this.relationsService.createInvite(senderId, receiverId);
+  async postInvite(@Body() body: InviteDto, @SessionUserId() userId: bigint) {
+    const {receiverName} = body;
+    return await this.relationsService.createInvite(userId, receiverName);
   }
 
   @Delete('invites')

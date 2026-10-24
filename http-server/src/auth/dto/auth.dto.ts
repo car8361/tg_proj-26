@@ -22,6 +22,14 @@ export class PasswordDto {
     password: string;
 }
 
+export class ConfirmPasswordDto {
+    @IsString({message: "DTO"})
+    @IsNotEmpty({message: "DTO"})
+    @Length(3, 64, {message: "Heslo může mít 3 - 64 znaků"})
+    confirmPassword: string;
+}
+
+
 export class EmailDto {
     @IsString({message: "DTO"})
     @IsEmail()

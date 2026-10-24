@@ -1,4 +1,4 @@
-import {Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards} from '@nestjs/common';
+import {Body, Controller, Delete, Get, Param, Patch, Post, Req, Res, UseGuards} from '@nestjs/common';
 import { ChatsService } from './chats.service.js';
 import {MessageDto, GetMessagesDto, PatchMessagesDto, UpdateChatDto} from "./dto/chat.dto.js";
 import {IsChatOwner, IsMessageOwner} from "./chats.guard.js";
@@ -6,6 +6,7 @@ import {SessionVerified} from "../auth/auth.guard.js";
 import {SessionUserId} from "../common/decorators/session-user-id/session-user-id.decorator.js";
 import {ParseBigintPipe} from "../common/decorators/parse-bigint-pipe/parse-bigint-pipe.decorator.js";
 import {SessionUsername} from "../common/decorators/session-username/session-username.decorator.js";
+import type { Response } from "express";
 
 @Controller('chats')
 @UseGuards(SessionVerified)
@@ -41,9 +42,16 @@ export class ChatsController {
     return await this.chatsService.getMessages(chatId, messageId, amount);
   }
 
+  @Get("/")
+  async getChats(@SessionUserId() userId: bigint, @Res() res: Response) {
+    const result = await this.chatsService.getChats(userId);
+    return res.status(200).json({chats: result});
+  }
+
   @Post("/")
-  async createChat(@SessionUserId() userId: bigint) {
-    return await this.chatsService.createChat(userId);
+  async createChat(@SessionUserId() userId: bigint, @Res() res: Response) {
+    const result = await this.chatsService.createChat(userId);
+    return res.status(200).json(JSON.stringify(result));
   }
 
   @Patch("/:chatId")

@@ -1,7 +1,8 @@
-import {useMutation, useSuspenseQuery, useQueryClient} from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import {useState} from "react";
 import {useNavigate} from "react-router";
 import type { Auth } from "../cacheTypes/auth";
+import {useMutationDeleteAccount, useMutationLogout} from "../queries/auth.ts";
 
 function Header() {
 	const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -20,11 +21,8 @@ function Header() {
 			<p className="mr-auto">My app</p>
 			<nav className="flex mr-auto gap-4">
 				<a href="/home">Home</a>
-				{!data.userId && (
-					<>
-						<a href="/login">Login</a>
-						<a href="/register">Register</a>
-					</>
+				{data.userId && (
+					<a href="/dashboard">Dashboard</a>
 				)}
 			</nav>
 			<p className="cursor-pointer" onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}>Logged in as: {data?.username ?? "Guest"}</p>
@@ -38,7 +36,6 @@ function Header() {
 }
 
 function UserMenu() {
-	const queryClient = useQueryClient();
 	const navigate = useNavigate();
 
 	const {data} = useSuspenseQuery<Auth>({
@@ -52,33 +49,33 @@ function UserMenu() {
 		}
 	});
 
-	const { mutate } = useMutation({
-		mutationFn: async () => {
-			const res =  fetch ("/api/auth/logout", {
-				method: "POST",
-				credentials: "include",
-			});
-			return await res;
-		},
-		onSuccess: (res) => {
-			queryClient.invalidateQueries({ queryKey: ["auth"] });
-			location.reload();
-		}
-	})
+	const logoutMut = useMutationLogout();
+	const deleteMut = useMutationDeleteAccount();
+
+	const loggedInButtons: Record<string, () => void> = {
+		Logout: () => logoutMut.mutate(),
+		"Delete Account": () => deleteMut.mutate()
+	}
+
+	const loggedOutButtons: Record<string, () => void> = {
+		Login: () => navigate("/login"),
+	}
 
 	return (
-		<>
-			{data.userId ? (
-				<div className="absolute mt-5 bg-white border border-black top-full right-0 p-5 rounded-2xl">
-					<button onMouseEnter={(e) => e.currentTarget.style.color = "gray"} onMouseLeave={(e) => e.currentTarget.style.color = "black"} className="text-black cursor-pointer" onClick={() => mutate()}>Logout</button>
-				</div>
-			) : (
-				<div className="absolute mt-5 bg-white border border-black top-full right-0 p-5 rounded-2xl">
-					<button onMouseEnter={(e) => e.currentTarget.style.color = "gray"} onMouseLeave={(e) => e.currentTarget.style.color = "black"} className="text-black cursor-pointer" onClick={() => navigate("/login")}>Login</button>
-				</div>
-				)}
-		</>
+		<div id="header-user-menu-div">
+			<div className="absolute mt-5 bg-white border border-black top-full right-0 px-5 rounded-2xl">
+			{data.userId ?
+				(Object.entries(loggedInButtons).map(([name, func]) => <Button name={name} func={func}></Button>))
+				:
+				(Object.entries(loggedOutButtons).map(([name, func]) => <Button name={name} func={func}></Button>))
+			}
+			</div>
+		</div>
 	)
+}
+
+function Button({name, func} : { name: string, func: () => void }) {
+	return (<button className="text-black my-4 cursor-pointer hover:text-gray-500" onClick={func}>{name}</button>)
 }
 
 export default Header;
