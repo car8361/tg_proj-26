@@ -19,6 +19,7 @@ async function bootstrap() {
     credentials: true
   })
   app.use(session({
+    name: process.env.SESSION_NAME,
     secret: process.env.SESSION_SECRET!,
     resave: false,
     saveUninitialized: false,

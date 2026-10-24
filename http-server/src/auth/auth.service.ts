@@ -51,17 +51,20 @@ export class AuthService {
   }
   async sendMailCode(email: string, userId: bigint) {
     const code = randomInt(1000000).toString();
+    await this.conn.email_code.deleteMany({
+      where: {user_id: userId}
+    });
     await this.conn.email_code.create({
       data: {user_id: userId, email, code, attempts: 0},
     })
     this.mailer.sendMail(
-      [email],
-      `Váš verifikační kód`,
-      `Váš verifikační kód je: ${code}.\nVyprší za 5 minut, prosím s nikým nesdílejte.`,
-      `<div>Váš verifikační kód je: ${code}.\nVyprší za 5 minut, prosím s nikým nesdílejte.</div>`
+      email,
+      `Your verification code`,
+      `Your verification code is: ${code}.\nIt is going to expire in 5 minutes. Please do not share this code with anybody.`,
+      `<div>Your verification code is: ${code}.\nIt is going to expire in 5 minutes. Please do not share this code with anybody.</div>`
     )
   }
-  async verifyCode(code: string, userId: bigint, ip: string): Promise<boolean> {
+  async verifyCode(code: string, userId: bigint, ip: string): Promise<boolean | string> {
     const res = await this.conn.email_code.findFirst({
       where: { user_id: userId },
     })
@@ -69,20 +72,31 @@ export class AuthService {
       return false;
     }
     if (new Date() > res.due_until) {
-      await this.conn.email_code.delete({
+      console.log("Deleting");
+      await this.conn.email_code.deleteMany({
         where: {id: res.user_id}
       });
       return false;
     }
     if (res.attempts >= 3) {
-      await this.conn.email_code.delete({
-        where: {id: res.user_id}
-      });
-      await this.mailer.sendMail(
-        [res.email],
-        `Podezřelá aktivita`,
-        `Někdo se pokouší přihlásit do Vašeho účtu z ${ip}.`,
-        `<div>Někdo se pokouší přihlásit do Vašeho účtu z ${ip}.<div>`,
+      try {
+        await this.conn.email_code.delete({
+          where: {id: res.user_id}
+        });
+        return "LOGOUT";
+      } catch (err) {
+        if (err instanceof PrismaClientKnownRequestError) {
+          if (err.code === "P2025") {
+            throw new ConflictException("Code does not exist")
+          }
+        }
+      }
+      console.log("Mail to be sent the sus activity: ", res.email);
+      this.mailer.sendMail(
+        res.email,
+        `Suspicious activity`,
+        `Somebody is trying to log into your account from: ${ip}.`,
+        `<div>Somebody is trying to log into your account from: ${ip}.<div>`,
       );
       return false;
     }

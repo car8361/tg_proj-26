@@ -4,35 +4,27 @@ import mt from "mailtrap";
 
 @Injectable()
 export class MailerService {
-    private readonly transport;
+    private readonly client;
     constructor() {
         if (!process.env.MAILTRAP_SECRET) {
             throw new Error("MAILTRAP_SECRET missing in .env")
         }
-        this.transport = nm.createTransport(
-        mt.MailtrapTransport({
-            token: process.env.MAILTRAP_SECRET,
-            sandbox: true,
-            testInboxId: 4262057,
-        }));
+       this.client = new mt.MailtrapClient({
+       token: process.env.MAILTRAP_SECRET,
+       });
     }
-    sendMail(recipients: string[], subject: string, text: string, html: string) {
-        this.transport
-          .sendMail({
+    sendMail(recipients: string, subject: string, text: string, html: string) {
+        this.client
+          .send({
             from: {
-              address: 'hello@demomailtrap.co',
-              name: "Mailtrap",
+              email: 'noreply@dnck.dev',
+              name: "Terra demo app - Verification",
             },
-            to: recipients,
+            to: [{email: recipients}],
             subject: subject,
             text: text,
             html: html
-          }, (error, info) => {
-            if (error) {
-              return console.error(error);
-            }
-            console.log("Message sent: %s", info);
-          })
+          }).then(console.log, console.error);
     }
 
     /*

@@ -1,9 +1,12 @@
-import { Controller, Get, Post, Body, HttpCode, Req, Ip, UseGuards, Res, Query, ConflictException } from '@nestjs/common';
+import {
+  Controller, Get, Post, Body, HttpCode, Req, Ip, UseGuards, Res, Query, ConflictException,
+  InternalServerErrorException
+} from '@nestjs/common';
 import { AuthService } from './auth.service.js';
 import { RegisterDto } from "./dto/register.dto.js";
 import { LoginDto } from './dto/login.dto.js';
 import type {Request, Response} from "express";
-import { SessionUID, SessionVerified } from './auth.guard.js';
+import { SessionUID } from './auth.guard.js';
 import { SessionUserId } from '../common/decorators/session-user-id/session-user-id.decorator.js';
 import {EmailDto, UsernameDto} from './dto/auth.dto.js';
 import { $2faDto } from './dto/$2fa.dto.js';
@@ -28,28 +31,55 @@ export class AuthController {
     await new Promise<void>((resolve, reject) => {
       req.session.regenerate((err: Error) => (err ? reject(err) : resolve()));
     });
-    this.authService.sendMailCode(user.email!, user.id!);
+    if (!user || !user.email) {
+      throw new Error("Missing user error");
+    }
+    try {
+      console.log("Sending mail: " + user.email);
+      await this.authService.sendMailCode(user.email, user.id!);
+    } catch (err) {
+      console.error(err);
+      throw new InternalServerErrorException("Server Error while sending mail");
+    }
     req.session.userId = String(user.id);
     req.session.verified = String(false);
     req.session.username = String(user.username);
     return;
   }
 
+  @Post('logout')
+  async logout(@Req() req: Request, @Res() res: Response) {
+    await new Promise<void>((resolve, reject) => {
+      req.session.destroy((err: Error) => (err ? reject(err) : resolve()));
+    })
+    res.clearCookie(process.env.SESSION_NAME!);
+    return res.status(200).json({ok: true});
+  }
+
+
+
   @Post('2fa')
-  @UseGuards(SessionVerified)
+  @UseGuards(SessionUID)
   async _2fa(
     @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
+    @Res() res: Response,
     @Body() body: $2faDto,
     @SessionUserId() userId: bigint,
   ) {
+    console.log(body);
     const { code } = body;
     const verified = await this.authService.verifyCode(code, userId, req.ip ?? "Neznámá IP adresa");
+    if (verified === "LOGOUT") {
+      await new Promise((resolve, reject) => {
+        req.session.destroy((err: Error) => { err ? reject(err) : resolve(true) });
+      })
+      res.clearCookie(process.env.SESSION_NAME!);
+    }
     if (verified) {
       req.session.verified = true;
-      return res.status(201);
+      return res.status(201).json({ok: true});
     } else {
-      return res.status(401);
+      return res.status(401).json({ok: false});
     }
   }
 
