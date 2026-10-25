@@ -43,7 +43,10 @@ export const AuthZod = z.object({
 })
 
 export interface GetChats {
-	chats: string[];
+	chats: {
+		chat_name: string;
+		id: string;
+	}[];
 }
 
 export interface FriendRequestReq {
@@ -57,4 +60,10 @@ export interface GetFriends {
 		owner_id: string;
 		other_id: string;
 	}[]
+}
+
+export interface GetMessages {
+	messages: {
+
+	}
 }

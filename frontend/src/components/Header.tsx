@@ -21,6 +21,7 @@ function Header() {
 			<p className="mr-auto">My app</p>
 			<nav className="flex mr-auto gap-4">
 				<a href="/home">Home</a>
+				<a href="/api">API - swagger</a>
 				{data.userId && (
 					<a href="/dashboard">Dashboard</a>
 				)}
@@ -54,7 +55,7 @@ function UserMenu() {
 
 	const loggedInButtons: Record<string, () => void> = {
 		Logout: () => logoutMut.mutate(),
-		"Delete Account": () => deleteMut.mutate()
+		"Delete Account": () => deleteMut.mutate(),
 	}
 
 	const loggedOutButtons: Record<string, () => void> = {

@@ -1,5 +1,5 @@
 import {useMutation, useQuery, useSuspenseQuery} from "@tanstack/react-query";
-import type {Auth, FriendRequestReq, GetChats, GetFriends, Register} from "../cacheTypes/auth.ts";
+import type {Auth, FriendRequestReq, GetChats, GetFriends, GetMessages, Register} from "../cacheTypes/auth.ts";
 import { queryClient } from "../queryClient.ts";
 import type { Login } from "../cacheTypes/auth.ts";
 import {useNavigate} from "react-router";
@@ -152,6 +152,18 @@ export const useSuspenseQueryFriends = () => useSuspenseQuery<GetFriends>({
 	},
 })
 
+export const useSuspenseQueryMessages = (chatId: string) => useSuspenseQuery<GetMessages>({
+	queryKey: ["messages", chatId],
+	queryFn: async (chatId) => {
+		const res = await fetch(`/api/chats/messages/${chatId}`, {
+			method: "GET",
+			credentials: "include",
+		});
+		return res.json();
+	},
+})
+
+
 export const useMutationChat = () => useMutation({
 	mutationFn: async () => {
 		const res = await fetch("/api/chats", {
@@ -175,5 +187,21 @@ export const useMutationFriendRequest = () => useMutation<GetFriends>({
 			body: JSON.stringify(Data),
 		})
 		return res.json();
+	}
+})
+
+export const useMutationDeleteChat = () => useMutation({
+	mutationFn: async (chatId: string) => {
+		const res = await fetch(`/api/chats/${chatId}`, {
+			method: "DELETE",
+			credentials: "include",
+		})
+		return res;
+	},
+	onSuccess: (res) => {
+		if (res.ok) {
+			queryClient.invalidateQueries({queryKey: ["chats"]});
+			location.reload();
+		}
 	}
 })
