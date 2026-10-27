@@ -8,7 +8,6 @@ import { MailerService } from '../mailer/mailer.service.js';
 @Injectable()
 export class AuthService {
   constructor(private readonly conn: PrismaService, private readonly mailer: MailerService) {}
-  private readonly logger = new Logger(AuthService.name);
   async registerUser(username: string, email: string, password: string, ip: string) {
       const hash = await b.hash(password, 12);
       try {
@@ -19,7 +18,6 @@ export class AuthService {
 
       return { id: user.id, username: user.username };
     } catch (err) {
-      this.logger.log(`Invalid registration from ${ip}`)
       if (err instanceof PrismaClientKnownRequestError) {
         if (err.code === "P2002") {
           throw new ConflictException('Username not unique');

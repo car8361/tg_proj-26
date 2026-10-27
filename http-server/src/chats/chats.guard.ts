@@ -1,5 +1,7 @@
 import {CanActivate, ExecutionContext, Injectable} from "@nestjs/common";
 import {PrismaService} from "../prisma/prisma.service.js";
+import {Reflector} from "@nestjs/core";
+import { privilage } from "../generated/prisma/enums.js";
 
 /**
  * Pustí request dál pokud je vlastník zprávy
@@ -43,8 +45,8 @@ export class IsMessageOwner implements CanActivate {
  * - **chatId** - z params
  * - **session data**: verified, userId
  */
-@Injectable()
-export class IsChatOwner implements CanActivate {
+/**@Injectable()
+export class IsChatPrivilage implements CanActivate {
 	constructor(private readonly conn: PrismaService) {}
 
 	async canActivate(context: ExecutionContext) {
@@ -57,8 +59,8 @@ export class IsChatOwner implements CanActivate {
 		}
 
 		try {
-			await this.conn.chat.findFirstOrThrow({
-				where: {chat_owner_id: userId, id: chatId},
+			await this.conn.chat_user.findFirstOrThrow({
+				where: {chat_id: chatId, },
 				select: {id: true}
 			})
 		} catch {
@@ -66,5 +68,27 @@ export class IsChatOwner implements CanActivate {
 		}
 
 		return true;
+	}
+}**/
+
+export const Roles = Reflector.createDecorator<privilage[]>();
+
+@Injectable()
+export class IsChatPrivilage implements CanActivate {
+	constructor(private reflector: Reflector, private readonly conn: PrismaService) {}
+
+	async canActivate(context: ExecutionContext) {
+		console.log("GUARD IsChatPrivelage RUNNING");
+		const roles = this.reflector.get(Roles, context.getHandler());
+		if (!roles) { return true; }
+		const request = context.switchToHttp().getRequest();
+		const session = request.session;
+		const chatId = request.params.chatId;
+		const userId = session.user_id;
+		const result = await this.conn.chat_user.findFirst({
+			where: {id: userId, privilage: { in: roles}},
+			select: {user_id: true},
+		})
+		return !!result;
 	}
 }

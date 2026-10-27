@@ -120,48 +120,56 @@ export class ChatsService {
 	async getChats(userId: bigint) {
 		const res = await this.conn.chat_user.findMany({
 			where: { user_id: userId },
-			select: { chat_user_chat_reference: { select: { chat_name: true }}}
+			select: { chat_user_chat_reference: { select: { chat_name: true, id: true }}}
 		});
-		return res.map((r) => r.chat_user_chat_reference.chat_name);
+		return res.map((r) => ({chat_name: r.chat_user_chat_reference.chat_name, id: r.chat_user_chat_reference.id.toString()}));
 	}
 
 	async createChat(userId: bigint) {
-		const createChat = await this.conn.chat.create({data: {chat_owner_id: userId}});
+		const createChat = await this.conn.chat.create({});
 		await this.conn.chat_user.create({data: {user_id: userId, chat_id: createChat.id, privilage: "OWNER"}});
 	}
 
-	async updateChat(chatId: bigint, newOwnerId: bigint, name: string) {
+	async updateChat(chatId: bigint, name: string) {
 		await this.conn.chat.update({
-			where: {id: chatId},
-			data: {name: name, chat_owner_id: newOwnerId},
+			where: { id: chatId },
+			data: { name: name },
 		})
 		const userIdRows = await this.conn.chat_user.findMany({
 			where: { chat_id: chatId },
 			select: { user_id: true}
 		});
 		const roomIds = this.usersRowToEmitField(userIdRows);
-		return this.gateway.emitMessageToRoom(roomIds, "chats:update", {chatId, name})
+		return this.gateway.emitMessageToRoom(roomIds, "chats:update", {chatId: chatId.toString(), name})
 	}
 
 	async deleteChat(chatId: bigint) {
 		try {
+			const userIdsRows = await this.conn.chat_user.findMany({
+				where: { chat_id: chatId },
+				select: { user_id: true }
+			})
 			await this.conn.chat.delete({
 				where: {id: chatId},
 			})
-			const userIdsRows = await this.conn.chat_user.findMany({
-				where: { chat_id: chatId },
-			})
+
 			const roomIds = this.usersRowToEmitField(userIdsRows);
-			this.gateway.emitMessageToRoom(roomIds, "chats:delete", {chatId})
-		} catch {
-			throw new NotFoundException("Invalid chat ID");
+			this.gateway.emitMessageToRoom(roomIds, "chats:delete", {chatId: chatId.toString()})
+		} catch (err) {
+			if (err instanceof Prisma.PrismaClientKnownRequestError) {
+				if (err.code === "P2025") {
+					throw new NotFoundException("Invalid chat ID");
+				}
+			}
+			console.error(err);
 		}
 	}
 
 	private usersRowToEmitField(rowsUserIds: { user_id: bigint }[]) {
 		let roomIds = [];
+		console.log("UsersRowToEmitField RECEIVER: ", rowsUserIds);
 		for (let i = 0; i < rowsUserIds.length; i++) {
-			roomIds.push(`chat:${rowsUserIds[i]}`);
+			roomIds.push(`chat:${rowsUserIds[i].user_id.toString()}`);
 		}
 		return roomIds;
 	}

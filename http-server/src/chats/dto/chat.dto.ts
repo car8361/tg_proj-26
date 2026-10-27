@@ -52,7 +52,4 @@ export class PatchMessagesDto {
 export class UpdateChatDto {
 	@Length(1, 64)
 	name: string;
-	@IsId()
-	@Optional()
-	newOwnerId: bigint;
 }

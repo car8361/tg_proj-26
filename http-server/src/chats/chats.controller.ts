@@ -1,7 +1,7 @@
 import {Body, Controller, Delete, Get, Param, Patch, Post, Req, Res, UseGuards} from '@nestjs/common';
 import { ChatsService } from './chats.service.js';
 import {MessageDto, GetMessagesDto, PatchMessagesDto, UpdateChatDto} from "./dto/chat.dto.js";
-import {IsChatOwner, IsMessageOwner} from "./chats.guard.js";
+import {IsChatPrivilage, IsMessageOwner, Roles} from "./chats.guard.js";
 import {SessionVerified} from "../auth/auth.guard.js";
 import {SessionUserId} from "../common/decorators/session-user-id/session-user-id.decorator.js";
 import {ParseBigintPipe} from "../common/decorators/parse-bigint-pipe/parse-bigint-pipe.decorator.js";
@@ -24,7 +24,7 @@ export class ChatsController {
     return await this.chatsService.delMessage(messageId);
   }
 
-  @Patch("/message/:messageId")
+  @Patch("/messages/:messageId")
   @UseGuards(IsMessageOwner)
   async patchMessage(
       @Body() body: PatchMessagesDto,
@@ -35,7 +35,7 @@ export class ChatsController {
     await this.chatsService.updMessage(userId, messageId, newMessage)
   }
 
-  @Get("/message")
+  @Get("/messages/")
   async getMessages(@Body() body: GetMessagesDto) {
     const { chatId, messageId } = body;
     const amount = 50;
@@ -48,6 +48,22 @@ export class ChatsController {
     return res.status(200).json({chats: result});
   }
 
+
+  @Post("/member")
+  async addMember() {
+
+  }
+
+  @Patch("/member")
+  async updateMember() {
+
+  }
+
+  @Delete("/member")
+  async delMember() {
+
+  }
+
   @Post("/")
   async createChat(@SessionUserId() userId: bigint, @Res() res: Response) {
     const result = await this.chatsService.createChat(userId);
@@ -55,14 +71,16 @@ export class ChatsController {
   }
 
   @Patch("/:chatId")
-  @UseGuards(IsChatOwner)
+  @UseGuards(IsChatPrivilage)
+  @Roles(["OWNER"])
   async updateChat(@Body() body: UpdateChatDto, @SessionUserId() userId: bigint, @Param('chatId', ParseBigintPipe) chatId: bigint) {
-    let { name, newOwnerId } = body;
-    return await this.chatsService.updateChat(chatId, newOwnerId ?? userId, name);
+    let { name } = body;
+    return await this.chatsService.updateChat(chatId, name);
   }
 
   @Delete("/:chatId")
-  @UseGuards(IsChatOwner)
+  @UseGuards(IsChatPrivilage)
+  @Roles(["OWNER"])
   async deleteChat(@Param('chatId', ParseBigintPipe) chatId: bigint) {
     return await this.chatsService.deleteChat(chatId);
   }
