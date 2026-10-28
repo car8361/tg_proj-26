@@ -4,10 +4,11 @@ import * as b from "bcrypt";
 import { randomInt } from "node:crypto";
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
 import { MailerService } from '../mailer/mailer.service.js';
+import {SocketGateway} from "../socket/socket.gateway.js";
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly conn: PrismaService, private readonly mailer: MailerService) {}
+  constructor(private readonly conn: PrismaService, private readonly mailer: MailerService, private readonly gateway: SocketGateway) {}
   async registerUser(username: string, email: string, password: string, ip: string) {
       const hash = await b.hash(password, 12);
       try {
@@ -112,6 +113,7 @@ export class AuthService {
       await this.conn.user.delete({
         where: {id},
       });
+      this.gateway.exitRoom(id.toString());
     } catch (err) {
       if (err instanceof PrismaClientKnownRequestError && err.code === "P2025") {
         throw new NotFoundException(`User ${id} not found`)
@@ -128,5 +130,8 @@ export class AuthService {
     return this.conn.user.findFirst({
       where: { email },
     });
+  }
+  logoutEmit(id: bigint) {
+    return this.gateway.exitRoom(id.toString());
   }
 }

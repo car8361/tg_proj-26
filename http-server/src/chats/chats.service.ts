@@ -8,11 +8,11 @@ import {
 } from '@nestjs/common';
 import {PrismaService} from "../prisma/prisma.service.js";
 import {Prisma, privilage} from "../generated/prisma/client.js";
-import {ChatsGateway} from "./chats.gateway.js";
+import {SocketGateway} from "../socket/socket.gateway.js";
 
 @Injectable()
 export class ChatsService {
-	constructor(private readonly conn: PrismaService, private readonly gateway: ChatsGateway) {}
+	constructor(private readonly conn: PrismaService, private readonly gateway: SocketGateway) {}
 
 	async handleMessage(userId: bigint, chatId: bigint, username: string, message: string) {
 		const isApart = await this.conn.chat_user.findFirst({

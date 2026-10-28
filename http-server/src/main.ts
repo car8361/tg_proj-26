@@ -6,15 +6,17 @@ import { ConsoleLogger, ValidationPipe } from "@nestjs/common";
 import { json } from "express";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 import {GlobalInterceptor} from "./common/decorators/logger-interceptor/logger.interceptor.js";
+import {NestExpressApplication} from "@nestjs/platform-express";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: new ConsoleLogger({
       logLevels: ['debug', 'log', 'warn', 'error', 'fatal'],
       json: process.env.PRODUCTION === "true",
       colors: process.env.NODE_ENV === "true"
     })
   });
+  app.set("trust proxy", 1);
   app.setGlobalPrefix("api");
   app.use(json());
   const config = new DocumentBuilder()

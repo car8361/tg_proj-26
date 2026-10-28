@@ -52,14 +52,14 @@ export class AuthController {
 
   @Post('logout')
   async logout(@Req() req: Request, @Res() res: Response) {
+    const userId = req.session.userId;
     await new Promise<void>((resolve, reject) => {
       req.session.destroy((err: Error) => (err ? reject(err) : resolve()));
     })
     res.clearCookie(process.env.SESSION_NAME!);
+    this.authService.logoutEmit(userId);
     return res.status(200).json({ok: true});
   }
-
-
 
   @Post('2fa')
   @UseGuards(SessionUID)

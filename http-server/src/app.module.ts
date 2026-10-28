@@ -6,10 +6,21 @@ import { UsersModule } from './users/users.module.js';
 import { ChatsModule } from './chats/chats.module.js';
 import { RelationsModule } from './relations/relations.module.js';
 import { ReportsModule } from './reports/reports.module.js';
+import { SocketModule } from './socket/socket.module.js';
+import {UserIdThrottlerGuard} from "./common/extensions/throttler.extension.js";
+import { ThrottlerModule } from "@nestjs/throttler";
+import {APP_GUARD} from "@nestjs/core";
 
 @Module({
-  imports: [AuthModule, PrismaModule, MailerModule, UsersModule, ChatsModule, RelationsModule, ReportsModule],
+  imports: [AuthModule, PrismaModule, MailerModule, UsersModule, ChatsModule, RelationsModule, ReportsModule, SocketModule, ThrottlerModule.forRoot({
+    throttlers: [
+      {
+        ttl: 60000,
+        limit: 10
+      }
+    ],
+  })],
   controllers: [],
-  providers: [],
+  providers: [{provide: APP_GUARD, useClass: UserIdThrottlerGuard}],
 })
 export class AppModule {}

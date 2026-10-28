@@ -6,7 +6,7 @@ import {
   PatchMessagesDto,
   UpdateChatDto,
   CreateMemberDto,
-  UpdateMemberDto, GetMembersDto, DeleteMemberDto
+  UpdateMemberDto, DeleteMemberDto
 } from "./dto/chat.dto.js";
 import {IsChatPrivilage, IsHigherPriority, IsMessageOwner, Roles} from "./chats.guard.js";
 import {SessionVerified} from "../auth/auth.guard.js";

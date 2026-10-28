@@ -13,10 +13,10 @@ import {HttpException, UsePipes, ValidationPipe} from "@nestjs/common";
   whitelist: true,
   exceptionFactory: (errors) => new WsException(errors),
 }))
-@WebSocketGateway(3001, {
+@WebSocketGateway(3000, {
   cors: { origin: process.env.FRONTEND_URL, credentials: true }
 })
-export class ChatsGateway implements OnGatewayConnection, OnGatewayInit {
+export class SocketGateway implements OnGatewayConnection, OnGatewayInit {
   @WebSocketServer()
   server: Server;
 
@@ -25,28 +25,34 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayInit {
       try {
         const verified = socket.request.session.verified;
         if (!verified) {
-          socket.emit("kicked", {reason: "You aren't logged in or verified"});
-          next(new Error('Unauthorized'));
+          socket.emit("room:kicked", {reason: "You aren't logged in or verified"});
+          socket.disconnect();
         }
-        const userId = socket.request.session.userId;
-      } catch {
+        next();
+      } catch (err) {
         socket.emit("kicked", {reason: "Server error"})
-        next(new Error('Unauthorized'));
+        socket.disconnect();
+        throw err;
       }
     });
   }
 
   handleConnection(@ConnectedSocket() client: Socket) {
-     try {
-       const verified = client.request.session.verified;
-       if (!verified) {
-         client.emit("kicked", {reason: "You were logged out"});
-         client.disconnect(true);
-       }
-     } catch {
-       client.emit("kicked", {reason: "Server error"});
-       client.disconnect(true);
-     }
+    this.server.on("connection", (socket: Socket) => {
+      socket.on("room:join", (data: any) => {
+        try {
+          const verified = client.request.session.verified;
+          if (!verified) {
+            client.emit("kicked", {reason: "You were logged out"});
+            client.disconnect(true);
+          }
+          socket.join(socket.request.session.userId);
+        } catch {
+          client.emit("kicked", {reason: "Server error"});
+          client.disconnect(true);
+        }
+      })
+    })
   }
 
   @SubscribeMessage("join")
@@ -77,11 +83,24 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayInit {
   /**
    * - data musí být převedena na string
    */
+  exitRoom<T>(roomId: string, data?: T) {
+    try {
+      this.server.to(roomId).emit("room:exit", data);
+      this.server.to(roomId).disconnectSockets(true);
+    } catch (err) {
+      console.error("Error at socket.gateway.ts: ", err);
+      throw err;
+    }
+  }
+
+  /**
+   * - data musí být převedena na string
+   */
   emitMessageToRoom<T>(roomIds: string[], toEmit: string, data: T) {
     try {
       this.server.to(roomIds).emit(toEmit, data);
     } catch (err) {
-      //needs some handling
+      console.error("Error at socket.gateway.ts: ", err);
       throw err;
     }
   }
