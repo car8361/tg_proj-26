@@ -1,6 +1,6 @@
 import { IsId } from "../../common/decorators/is-id/is-id.decorator.js"
-import {IsNotEmpty, IsString, Length} from "class-validator";
-import {Optional} from "@nestjs/common";
+import {IsEnum, IsNotEmpty, IsString, Length} from "class-validator";
+import { privilage } from "../../generated/prisma/enums.js";
 
 /**
  * Přijímá:
@@ -52,4 +52,22 @@ export class PatchMessagesDto {
 export class UpdateChatDto {
 	@Length(1, 64)
 	name: string;
+}
+
+export class CreateMemberDto {
+	@IsId()
+	userId: bigint;
+}
+
+export class UpdateMemberDto {
+	@IsId()
+	userId: bigint;
+
+	@IsEnum(privilage)
+	newRole: privilage;
+}
+
+export class DeleteMemberDto {
+	@IsId()
+	targetId: bigint;
 }

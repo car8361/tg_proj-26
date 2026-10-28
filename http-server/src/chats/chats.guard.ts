@@ -2,6 +2,8 @@ import {CanActivate, ExecutionContext, Injectable} from "@nestjs/common";
 import {PrismaService} from "../prisma/prisma.service.js";
 import {Reflector} from "@nestjs/core";
 import { privilage } from "../generated/prisma/enums.js";
+import { Request } from "express";
+import session from "express-session";
 
 /**
  * Pustí request dál pokud je vlastník zprávy
@@ -73,6 +75,11 @@ export class IsChatPrivilage implements CanActivate {
 
 export const Roles = Reflector.createDecorator<privilage[]>();
 
+/**
+ * **Očekává:**
+ * - chatId - params
+ * - userId - session
+ */
 @Injectable()
 export class IsChatPrivilage implements CanActivate {
 	constructor(private reflector: Reflector, private readonly conn: PrismaService) {}
@@ -90,5 +97,48 @@ export class IsChatPrivilage implements CanActivate {
 			select: {user_id: true},
 		})
 		return !!result;
+	}
+}
+
+/**
+ * **Očekává:**
+ * - targetId - body
+ * - chatId - params
+ * - userId - session
+ */
+@Injectable()
+export class IsHigherPriority implements CanActivate {
+	constructor(private readonly conn: PrismaService) {}
+
+	async canActivate(context: ExecutionContext) {
+		const req: Request = context.switchToHttp().getRequest();
+		const { targetId } = req.body.targetId;
+		const chatId = req.params.chatId;
+		const userId = req.session.user_id;
+		if (!userId || !chatId || !targetId) {
+			if (process.env.PRODUCTION === "true") {
+				console.log("INVALID BODY - IsHigherPriority (NEST GUARD)");
+			}
+			return false;
+		}
+		const users = await this.conn.chat_user.findMany({
+			where: {
+				chat_id: targetId,
+				OR: [
+					{user_id: userId},
+					{user_id: targetId},
+				]
+			},
+			select: {user_id: true, privilage: true},
+		})
+		if (!users || users.length < 2) {
+			return false;
+		}
+		const RequestorIndex = users[0].user_id === userId ? 0 : 1;
+		const OtherIndex = users[0].user_id === targetId ? 0 : 1
+		if (users[RequestorIndex].privilage <= users[OtherIndex].privilage) {
+			return false;
+		}
+		return true;
 	}
 }

@@ -30,7 +30,7 @@ services:
     build: ./frontend
     restart: unless-stopped
     ports:
-      - "500:80"
+      - "501:80"
     depends_on:
       - backend
 volumes:

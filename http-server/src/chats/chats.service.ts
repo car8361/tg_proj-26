@@ -1,6 +1,13 @@
-import {BadRequestException, ForbiddenException, HttpException, Injectable, NotFoundException} from '@nestjs/common';
+import {
+	BadRequestException,
+	ConflictException,
+	ForbiddenException,
+	HttpException,
+	Injectable,
+	NotFoundException
+} from '@nestjs/common';
 import {PrismaService} from "../prisma/prisma.service.js";
-import {Prisma} from "../generated/prisma/client.js";
+import {Prisma, privilage} from "../generated/prisma/client.js";
 import {ChatsGateway} from "./chats.gateway.js";
 
 @Injectable()
@@ -162,6 +169,77 @@ export class ChatsService {
 				}
 			}
 			console.error(err);
+		}
+	}
+
+	async getMembers(chatId: bigint) {
+		return this.conn.chat_user.findMany({
+			where: { chat_id: chatId },
+		})
+	}
+
+	async createMember(userId: bigint, chatId: bigint) {
+		try {
+			await this.conn.chat_user.create({
+				data: { chat_id: chatId, user_id: userId, privilage: "USER" }
+			})
+			const users = await this.conn.chat_user.findMany({
+				where: { chat_id: chatId },
+				select: { user_id: true }
+			})
+			const roomIds = this.usersRowToEmitField(users);
+			this.gateway.emitMessageToRoom(roomIds, "chats:members:add", {chatId: chatId.toString()});
+			return;
+		} catch (err) {
+			if (err instanceof Prisma.PrismaClientKnownRequestError) {
+				if (err.code === "P2002") {
+					throw new ConflictException("User already in chat");
+				}
+			}
+			throw err;
+		}
+	}
+
+	async updateMember(userId: bigint, chatId: bigint, newRole: privilage) {
+		try {
+			await this.conn.chat_user.update({
+				where: { user_id_chat_id: { user_id: userId, chat_id: chatId }, },
+				data: { privilage: newRole }
+			})
+			const userRows = await this.conn.chat_user.findMany({
+				where: { chat_id: chatId },
+			})
+			const roomIds = this.usersRowToEmitField(userRows);
+			this.gateway.emitMessageToRoom(roomIds, "chats:members:update", {chatId: chatId.toString()})
+			return;
+		} catch (err) {
+			if (err instanceof Prisma.PrismaClientKnownRequestError) {
+				if (err.code === "P2025") {
+					throw new NotFoundException("User not in chat");
+				}
+			}
+			throw err;
+		}
+	}
+
+	async deleteMember(targetId: bigint, chatId: bigint) {
+		try {
+			await this.conn.chat_user.delete({
+				where: { user_id_chat_id: { user_id: targetId, chat_id: chatId}}
+			})
+			const userRows = await this.conn.chat_user.findMany({
+				where: { chat_id: chatId },
+			})
+			const userIds = this.usersRowToEmitField(userRows);
+			this.gateway.emitMessageToRoom(userIds, "chats:members:delete", {chatId: chatId.toString()})
+			return;
+		} catch (err) {
+			if (err instanceof Prisma.PrismaClientKnownRequestError) {
+				if (err.code === "P2025") {
+					throw new NotFoundException("User not in chat");
+				}
+			}
+			throw err;
 		}
 	}
 

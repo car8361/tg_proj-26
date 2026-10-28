@@ -72,6 +72,7 @@ model Chat_user {
   chat_user_user_reference User @relation(fields: [user_id], references: [id], onDelete: Cascade)
   chat_user_chat_reference Chat @relation(fields: [chat_id], references: [id], onDelete: Cascade)
 
+  @@unique([user_id, chat_id])
   @@map("chat_users")
 }
 

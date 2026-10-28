@@ -1,7 +1,14 @@
 import {Body, Controller, Delete, Get, Param, Patch, Post, Req, Res, UseGuards} from '@nestjs/common';
 import { ChatsService } from './chats.service.js';
-import {MessageDto, GetMessagesDto, PatchMessagesDto, UpdateChatDto} from "./dto/chat.dto.js";
-import {IsChatPrivilage, IsMessageOwner, Roles} from "./chats.guard.js";
+import {
+  MessageDto,
+  GetMessagesDto,
+  PatchMessagesDto,
+  UpdateChatDto,
+  CreateMemberDto,
+  UpdateMemberDto, GetMembersDto, DeleteMemberDto
+} from "./dto/chat.dto.js";
+import {IsChatPrivilage, IsHigherPriority, IsMessageOwner, Roles} from "./chats.guard.js";
 import {SessionVerified} from "../auth/auth.guard.js";
 import {SessionUserId} from "../common/decorators/session-user-id/session-user-id.decorator.js";
 import {ParseBigintPipe} from "../common/decorators/parse-bigint-pipe/parse-bigint-pipe.decorator.js";
@@ -48,20 +55,32 @@ export class ChatsController {
     return res.status(200).json({chats: result});
   }
 
-
-  @Post("/member")
-  async addMember() {
-
+  @Get("/chats/:chatId/members")
+  @UseGuards(IsHigherPriority)
+  async getMembers(@Param('chatId', ParseBigintPipe) chatId: bigint) {
+    return this.chatsService.getMembers(chatId);
   }
 
-  @Patch("/member")
-  async updateMember() {
-
+  @Post("/chats/:chatId/members")
+  @UseGuards(IsChatPrivilage)
+  @Roles(["ADMIN"])
+  async addMember(@Body() body: CreateMemberDto, @Param('chatId', ParseBigintPipe) chatId: bigint) {
+    const { userId } = body;
+    return this.chatsService.createMember(userId, chatId);
   }
 
-  @Delete("/member")
-  async delMember() {
+  @Patch("/chats/:chatId/members")
+  @UseGuards(IsHigherPriority)
+  async updateMember(@Body() body: UpdateMemberDto, @Param('chatId', ParseBigintPipe) chatId: bigint) {
+    const { userId, newRole } = body;
+    return this.chatsService.updateMember(userId, chatId, newRole);
+  }
 
+  @Delete("/chats/:chatId/members")
+  @UseGuards(IsHigherPriority)
+  async delMember(@Body() body: DeleteMemberDto, @Param('chatId', ParseBigintPipe) chatId: bigint) {
+    const { targetId } = body;
+    return this.chatsService.deleteMember(targetId, chatId);
   }
 
   @Post("/")
