@@ -2,7 +2,6 @@ import {
 	BadRequestException,
 	ConflictException,
 	ForbiddenException,
-	HttpException,
 	Injectable,
 	NotFoundException
 } from '@nestjs/common';
@@ -35,7 +34,8 @@ export class ChatsService {
 			select: { user_id: true, chat_user_user_reference: true }
 		})
 		let roomIds = this.usersRowToEmitField(users);
-		this.gateway.emitMessageToRoom(roomIds, "chats:post", {senderName: username, userId, message});
+		this.gateway.emitMessageToRoom(roomIds, "chats:post", {senderName: username, userId: userId.toString(), message});
+		return;
 	}
 
 	async delMessage(messageId: bigint) {
@@ -56,7 +56,7 @@ export class ChatsService {
 				where: {id: messageId}
 			})
 			this.gateway.emitMessageToRoom(userIds, "chats:delete", {
-				messageId: messageId,
+				messageId: messageId.toString(),
 			});
 
 		} catch (err) {
@@ -69,7 +69,7 @@ export class ChatsService {
 		}
 	}
 
-	async updMessage(userId: bigint, messageId: bigint, newMessage: string) {
+	async updMessage(userId: bigint, username: string, messageId: bigint, newMessage: string) {
 		try {
 			await this.conn.chat_message.update({
 				where: {id: messageId},
@@ -95,7 +95,7 @@ export class ChatsService {
 			for (let i = 0; i < rowsUserIds.length; i++) {
 				roomIds.push(`chat:${rowsUserIds[i]}`);
 			}
-			this.gateway.emitMessageToRoom(roomIds, "chat:update", {userId, newMessage});
+			this.gateway.emitMessageToRoom(roomIds, "chat:update", {userId: userId.toString(), username, newMessage});
 		} catch (err) {
 			if (err instanceof Prisma.PrismaClientKnownRequestError) {
 				if (err.code === "P2025") {
@@ -124,17 +124,18 @@ export class ChatsService {
 		return msgs;
 	}
 
+	async createChat(userId: bigint) {
+		const createChat = await this.conn.chat.create({});
+		await this.conn.chat_user.create({data: {user_id: userId, chat_id: createChat.id, privilage: "OWNER"}});
+		return;
+	}
+
 	async getChats(userId: bigint) {
 		const res = await this.conn.chat_user.findMany({
 			where: { user_id: userId },
 			select: { chat_user_chat_reference: { select: { chat_name: true, id: true }}}
 		});
 		return res.map((r) => ({chat_name: r.chat_user_chat_reference.chat_name, id: r.chat_user_chat_reference.id.toString()}));
-	}
-
-	async createChat(userId: bigint) {
-		const createChat = await this.conn.chat.create({});
-		await this.conn.chat_user.create({data: {user_id: userId, chat_id: createChat.id, privilage: "OWNER"}});
 	}
 
 	async updateChat(chatId: bigint, name: string) {
@@ -173,9 +174,11 @@ export class ChatsService {
 	}
 
 	async getMembers(chatId: bigint) {
-		return this.conn.chat_user.findMany({
+		const userRows = await this.conn.chat_user.findMany({
 			where: { chat_id: chatId },
+			select: { chat_user_user_reference: { select: { id: true, username: true } } }
 		})
+		return userRows.map(r => ({id: r.chat_user_user_reference.id.toString(), username: r.chat_user_user_reference.username}));
 	}
 
 	async createMember(userId: bigint, chatId: bigint) {

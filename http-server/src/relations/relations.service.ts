@@ -160,26 +160,21 @@ export class RelationsService {
 	}
 
 	async block(userId: bigint, targetId: bigint) {
-		try {
-			await this.conn.$transaction(async (t) => {
-				await t.relation.deleteMany({
-					where: { OR: [
-							{owner_id: userId, other_id: targetId, relationship: { in: ["FRIEND", "INVITE_OUTGOING", "INVITE_INGOING"] }},
-							{owner_id: targetId, other_id: userId, relationship: { in: ["FRIEND", "INVITE_INGOING", "INVITE_INGOING"] }},
-						]},
-				})
-				await t.relation.create({
-					data: {
-						owner_id: userId,
-						other_id: targetId,
-						relationship: "BLOCKED",
-					}
-				})
+		await this.conn.$transaction(async (t) => {
+			await t.relation.deleteMany({
+				where: { OR: [
+					{owner_id: userId, other_id: targetId, relationship: { in: ["FRIEND", "INVITE_OUTGOING", "INVITE_INGOING"] }},
+						{owner_id: targetId, other_id: userId, relationship: { in: ["FRIEND", "INVITE_INGOING", "INVITE_INGOING"] }},
+					]},
 			})
-		} catch (err) {
-			//no error handling idea here
-			throw err;
-		}
+			await t.relation.create({
+				data: {
+					owner_id: userId,
+					other_id: targetId,
+					relationship: "BLOCKED",
+				}
+			})
+		})
 	}
 
 	async unblock(userId: bigint, targetId: bigint) {

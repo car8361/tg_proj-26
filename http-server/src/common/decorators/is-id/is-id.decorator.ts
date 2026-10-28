@@ -1,5 +1,5 @@
 import {applyDecorators} from "@nestjs/common";
-import {IsNotEmpty, IsNumber, IsUUID, Length, ValidateBy} from "class-validator";
+import { ValidateBy} from "class-validator";
 import {Transform} from "class-transformer";
 
 const IsValidId = (value: unknown) => typeof value === "bigint" && value > 0n && value <= 9223372036854775807n;

@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import nm from "nodemailer";
 import mt from "mailtrap";
 
 @Injectable()
