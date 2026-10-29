@@ -1,4 +1,4 @@
-import {useMutationChat, useMutationDeleteChat, useSuspenseQueryChats} from "../queries/auth.ts";
+import {useMutationChat, useMutationDeleteChat, useSuspenseQueryChats} from "../queries/queries.ts";
 
 function Chats() {
 	const { data } = useSuspenseQueryChats();

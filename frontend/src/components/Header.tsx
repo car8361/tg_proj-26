@@ -2,7 +2,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import {useState} from "react";
 import {useNavigate} from "react-router";
 import type { Auth } from "../cacheTypes/auth";
-import {useMutationDeleteAccount, useMutationLogout} from "../queries/auth.ts";
+import {useMutationDeleteAccount, useMutationLogout} from "../queries/queries.ts";
 
 function Header() {
 	const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);

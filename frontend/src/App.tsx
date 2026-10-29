@@ -10,7 +10,7 @@ import NotFound from "./routes/NotFound.tsx";
 import Footer from "./components/Footer.tsx";
 import Chats from "./routes/Chats.tsx";
 import Friends from "./routes/Friends.tsx";
-import {useSuspenseQueryAuth} from "./queries/auth.ts";
+import {useSuspenseQueryAuth} from "./queries/queries.ts";
 import AppPanel from "./components/AppPanel.tsx";
 
 function App() {

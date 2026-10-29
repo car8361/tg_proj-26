@@ -141,13 +141,19 @@ export const useSuspenseQueryChats = () => useSuspenseQuery<GetChats>({
 })
 
 
-export const useSuspenseQueryFriends = () => useSuspenseQuery<GetFriends>({
+export const useQueryFriends = () => useQuery<GetFriends>({
 	queryKey: ["friends"],
 	queryFn: async () => {
-		const res = await fetch("/api/relations/my", {
+		const res = await fetch("/api/relations/friends", {
 			method: "GET",
 			credentials: "include",
-		});
+		}).then(res => res.json());
+		if (!res.ok) {
+			if (res.status === 429) {
+				throw new Error("Rate limit reached")
+			}
+			throw Error(res.body?.message ?? "Server Error")
+		}
 		return res.json();
 	},
 })
@@ -178,15 +184,22 @@ export const useMutationChat = () => useMutation({
 	}
 })
 
-export const useMutationFriendRequest = () => useMutation<GetFriends>({
+export const useMutationFriendRequest = (setInviteRes: React.Dispatch<SetStateAction<string>>) => useMutation({
 	mutationFn: async (Data: FriendRequestReq) => {
-		const res = await fetch("/api/relations/invites", {
+		const res = await fetch("/api/relations/invites/", {
 			method: "POST",
 			credentials: "include",
 			headers: {"Content-Type": "application/json"},
 			body: JSON.stringify(Data),
 		})
 		return res.json();
+	},
+	onSuccess: (res) => {
+		if (res.ok) {
+			setInviteRes("Invite successfully sent!");
+		} else if (res.status === 409) {
+			setInviteRes("You can't send yourself a friend request")
+		}
 	}
 })
 

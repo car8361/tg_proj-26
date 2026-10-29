@@ -54,7 +54,7 @@ export interface FriendRequestReq {
 }
 
 export interface GetFriends {
-	relations: {
+	friends: {
 		owner_username: string;
 		other_username: string;
 		owner_id: string;
