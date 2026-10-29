@@ -165,6 +165,7 @@ export class RelationsService {
 						}
 					}
 				})
+				this.gateway.emitMessageToRoom([userId.toString(), otherIdRow.other_id.toString()], "relations:friends:delete", {})
 			})
 		} catch (err) {
 			if (err instanceof PrismaClientKnownRequestError) {
@@ -192,6 +193,8 @@ export class RelationsService {
 						relationship: "BLOCKED",
 					}
 				})
+				this.gateway.emitMessageToRoom([userId.toString()], "relations:blocks:block", {});
+				return;
 			})
 		} catch (err) {
 			if (err instanceof PrismaClientKnownRequestError) {
@@ -210,6 +213,8 @@ export class RelationsService {
 					owner_id_other_id: { owner_id: userId, other_id: targetId, relationship: "BLOCKED" },
 				}
 			})
+			this.gateway.emitMessageToRoom([userId.toString()], "relations:blocks:unblock", {})
+			return;
 		} catch (err) {
 			if (err instanceof PrismaClientKnownRequestError) {
 				if (err.code === "P2025") {

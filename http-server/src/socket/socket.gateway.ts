@@ -13,7 +13,7 @@ import {HttpException, UsePipes, ValidationPipe} from "@nestjs/common";
   whitelist: true,
   exceptionFactory: (errors) => new WsException(errors),
 }))
-@WebSocketGateway(3000, {
+@WebSocketGateway({
   cors: { origin: process.env.FRONTEND_URL, credentials: true }
 })
 export class SocketGateway implements OnGatewayConnection, OnGatewayInit {

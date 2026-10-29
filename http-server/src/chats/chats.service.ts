@@ -34,7 +34,7 @@ export class ChatsService {
 			select: { user_id: true, chat_user_user_reference: true }
 		})
 		let roomIds = this.usersRowToEmitField(users);
-		this.gateway.emitMessageToRoom(roomIds, "chats:post", {senderName: username, userId: userId.toString(), message});
+		this.gateway.emitMessageToRoom(roomIds, "chats:messages:sent", {senderName: username, userId: userId.toString(), message});
 		return;
 	}
 
@@ -55,7 +55,7 @@ export class ChatsService {
 			await this.conn.chat_message.delete({
 				where: {id: messageId}
 			})
-			this.gateway.emitMessageToRoom(userIds, "chats:delete", {
+			this.gateway.emitMessageToRoom(userIds, "chats:messages:delete", {
 				messageId: messageId.toString(),
 			});
 
@@ -95,7 +95,7 @@ export class ChatsService {
 			for (let i = 0; i < rowsUserIds.length; i++) {
 				roomIds.push(`chat:${rowsUserIds[i]}`);
 			}
-			this.gateway.emitMessageToRoom(roomIds, "chat:update", {userId: userId.toString(), username, newMessage});
+			this.gateway.emitMessageToRoom(roomIds, "chats:messages:update", {userId: userId.toString(), username, newMessage});
 		} catch (err) {
 			if (err instanceof Prisma.PrismaClientKnownRequestError) {
 				if (err.code === "P2025") {
