@@ -1,9 +1,11 @@
-import {Body, Controller, Delete, Get, Patch, Post, UseGuards} from '@nestjs/common';
+import {Body, Controller, Delete, Get, Param, Patch, Post, Res, UseGuards} from '@nestjs/common';
 import { RelationsService } from './relations.service.js';
 import {SessionVerified} from "../auth/auth.guard.js";
 import {SessionUserId} from "../common/decorators/session-user-id/session-user-id.decorator.js";
 import {AcceptInviteDto, BlockDto, DeleteFriendDto, DeleteInviteDto, InviteDto} from "./dto/relations.dto.js";
-import {SenderInUntrustedFriendRequest} from "./relations.guard.js";
+import {HasInvitePermissions} from "./relations.guard.js";
+import type {Response} from "express";
+import {ParseBigintPipe} from "../common/decorators/parse-bigint-pipe/parse-bigint-pipe.decorator.js";
 
 @Controller('relations')
 @UseGuards(SessionVerified)
@@ -11,54 +13,61 @@ export class RelationsController {
   constructor(private readonly relationsService: RelationsService) {}
 
   @Get('invites/pending')
-  async getPendingInvites(@SessionUserId() userId: bigint) {
-    return await this.relationsService.getIngoingInvites(userId);
+  async getPendingInvites(@SessionUserId() userId: bigint, @Res() res: Response) {
+    const result = await this.relationsService.getIngoingInvites(userId);
+    return res.status(200).json({success: true, invites: result});
   }
 
   @Get('invites/outgoing')
-  async getSentInvites(@SessionUserId() userId: bigint) {
-    return await this.relationsService.getOutgoingInvites(userId);
+  async getSentInvites(@SessionUserId() userId: bigint, @Res() res: Response) {
+    const result = await this.relationsService.getOutgoingInvites(userId);
+    return res.status(200).json({success: true, invites: result});
   }
 
-  @Post('invites')
-  async postInvite(@Body() body: InviteDto, @SessionUserId() userId: bigint) {
+  @Post('invites/')
+  async postInvite(@Body() body: InviteDto, @SessionUserId() userId: bigint, @Res() res: Response) {
     const {receiverName} = body;
-    return await this.relationsService.createInvite(userId, receiverName);
+    await this.relationsService.createInvite(userId, receiverName);
+    return res.status(201).json({success: true});
   }
 
-  @Delete('invites')
-  @UseGuards(SenderInUntrustedFriendRequest)
-  async deleteRequest(@Body() body: DeleteInviteDto, @SessionUserId() userId: bigint) {
-    const {inviteId} = body;
-    return await this.relationsService.deleteInvite(userId, inviteId);
+  @Delete('invites/:inviteId')
+  @UseGuards(HasInvitePermissions)
+  async deleteRequest(@Param('inviteId', ParseBigintPipe) inviteId: bigint, @SessionUserId() userId: bigint, @Res() res: Response) {
+    await this.relationsService.deleteInvite(userId, inviteId);
+    return res.status(204).json({success: true});
   }
 
-  @Patch('invites')
-  async patchRequest(@Body() body: AcceptInviteDto, @SessionUserId() userId: bigint) {
-    const {inviteId} = body;
-    return await this.relationsService.acceptInvite(userId, inviteId);
+  @Patch('invites/:inviteId')
+  async patchRequest(@Param('inviteId', ParseBigintPipe) inviteId: bigint, @SessionUserId() userId: bigint, @Res() res: Response) {
+    await this.relationsService.acceptInvite(userId, inviteId);
+    return res.status(204).json({success: true});
   }
 
-  @Get('my')
-  async getMy(@SessionUserId() userId: bigint) {
-    return await this.relationsService.myFriends(userId);
+  @Get('friends/')
+  async getFriends(@SessionUserId() userId: bigint, @Res() res: Response) {
+    const result = await this.relationsService.myFriends(userId);
+    return res.status(200).json({success: true, friends: result});
   }
 
-  @Delete('my')
-  async deleteMe(@Body() body: DeleteFriendDto, @SessionUserId() userId: bigint) {
+  @Delete('friends/')
+  async deleteFriends(@Body() body: DeleteFriendDto, @SessionUserId() userId: bigint, @Res() res: Response) {
     const {friendId} = body;
-    return await this.relationsService.deleteFriend(userId, friendId);
+    await this.relationsService.deleteFriend(userId, friendId);
+    return res.status(204).json({success: true});
   }
 
   @Post('block')
-  async block(@Body() body: BlockDto, @SessionUserId() userId: bigint) {
+  async block(@Body() body: BlockDto, @SessionUserId() userId: bigint, @Res() res: Response) {
     const {targetId} = body;
-    return await this.relationsService.block(userId, targetId);
+    await this.relationsService.block(userId, targetId);
+    return res.status(201).json({success: true});
   }
 
   @Delete('block')
-  async unblock(@Body() body: BlockDto, @SessionUserId() userId: bigint) {
+  async unblock(@Body() body: BlockDto, @SessionUserId() userId: bigint, @Res() res: Response) {
     const {targetId} = body;
-    return await this.relationsService.unblock(userId, targetId);
+    await this.relationsService.unblock(userId, targetId);
+    return res.status(204).json({success: true});
   }
 }

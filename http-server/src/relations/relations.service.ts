@@ -2,26 +2,29 @@ import {ConflictException, Injectable, NotFoundException} from '@nestjs/common';
 import { PrismaService } from "../prisma/prisma.service.js";
 import {Prisma} from "../generated/prisma/client.js";
 import {PrismaClientKnownRequestError} from "@prisma/client/runtime/client";
+import {SocketGateway} from "../socket/socket.gateway.js";
 
 
 //POZOR ZAJISTIT NEDUPLICITNÍ POZVÁNKY + KAMARÁDY / BLOKACE
 
 @Injectable()
 export class RelationsService {
-	constructor(private readonly conn: PrismaService) {}
+	constructor(private readonly conn: PrismaService, private readonly gateway: SocketGateway) {}
 
 	async getIngoingInvites(userId: bigint) {
-		return this.conn.relation.findMany({
+		const result = await this.conn.relation.findMany({
 			where: { owner_id: userId, relationship: "INVITE_INGOING" },
-			select: { other_id: true, friend_request_sender_reference: { select: { username: true } } }
+			select: { id: true, created_at: true, relation_other_user_reference: { select: { id: true, username: true } } }
 		})
+		return result.map(r => ({invite_id: r.id.toString(), user_id: r.relation_other_user_reference.id.toString(), username: r.relation_other_user_reference.username, created_at: r.created_at}))
 	}
 
 	async getOutgoingInvites(userId: bigint) {
-		return this.conn.relation.findMany({
+		const result = await this.conn.relation.findMany({
 			where: { owner_id: userId, relationship: "INVITE_OUTGOING" },
-			select: { other_id: true, friend_request_target_reference: { select: { username: true } } }
+			select: { id: true, created_at: true, relation_other_user_reference: { select: { id: true, username: true } } }
 		})
+		return result.map(r => ({invite_id: r.id.toString(), user_id: r.relation_other_user_reference.id.toString(), username: r.relation_other_user_reference.username, created_at: r.created_at}))
 	}
 
 	async createInvite(userId: bigint, targetName: string) {
@@ -38,6 +41,8 @@ export class RelationsService {
 					data: { owner_id: other_user.id, other_id: userId, relationship: "INVITE_INGOING" }
 				})
 			})
+			this.gateway.emitMessageToRoom([other_user.id.toString()], "relations:invites:ingoing", {username: targetName, userId: other_user.id.toString()})
+			return;
 		} catch (err) {
 			if (err instanceof Prisma.PrismaClientKnownRequestError) {
 				if (err.code = "P2002") { //unique constraint err code
@@ -64,11 +69,12 @@ export class RelationsService {
 						OR: [{relationship: "INVITE_OUTGOING"}, {relationship: "INVITE_INGOING"}]
 					}
 				})
+				this.gateway.emitMessageToRoom([userId.toString(), rowOtherId.other_id.toString()], "relations:invites:delete", {})
 			})
 		} catch (err) {
 			if (err instanceof PrismaClientKnownRequestError) {
 				if (err.code === "P2002") {
-					throw new ConflictException("You already have a relation with this person") //race condition? Needs to be checked
+					throw new ConflictException("You already have a relation with this person")
 				}
 				if (err.code === "P2025") {
 					throw new NotFoundException("Friend request not found")
@@ -86,10 +92,15 @@ export class RelationsService {
 					data: { relationship: "FRIEND"},
 					select: { other_id: true }
 				})
-				 await t.relation.update({
+				await t.relation.update({
 					where: { owner_id_other_id: { owner_id: rowOtherId.other_id, other_id: userId }, relationship: "INVITE_OUTGOING" },
 					data: { relationship: "FRIEND"}
 				})
+				await t.relation.update({
+					where: { owner_id_other_id: { owner_id: userId, other_id: rowOtherId.other_id }, relationship: "INVITE_INGOING" },
+					data: { relationship: "FRIEND"}
+				})
+				this.gateway.emitMessageToRoom([userId.toString(), rowOtherId.other_id.toString()], "relations:invites:accepted", {})
 			})
 		} catch (err) {
 			if (err instanceof PrismaClientKnownRequestError) {
@@ -108,10 +119,7 @@ export class RelationsService {
 		const res = await this.conn.relation.findMany({
 			where: {
 				relationship: 'FRIEND',
-				OR: [
-					{ owner_id: userId },
-					{ other_id: userId }
-				]
+				owner_id: userId
 			},
 			select: {
 				relation_owner_user_reference: {select: {username: true, id: true}},
@@ -119,10 +127,10 @@ export class RelationsService {
 			}
 		})
 		const relations = res.map(res => ({
-			owner_usernames: res.relation_owner_user_reference.username,
-			other_usernames: res.relation_other_user_reference.username,
-			owner_ids: res.relation_owner_user_reference.id,
-			other_ids: res.relation_other_user_reference.id,
+			owner_username: res.relation_owner_user_reference.username,
+			other_username: res.relation_other_user_reference.username,
+			owner_id: res.relation_owner_user_reference.id,
+			other_id: res.relation_other_user_reference.id,
 		}))
 
 		return relations;
@@ -148,6 +156,15 @@ export class RelationsService {
 						}
 					}
 				})
+				await t.relation.delete({
+					where: {
+						relationship: 'FRIEND',
+						owner_id_other_id: {
+							owner_id: userId,
+							other_id: otherIdRow.other_id
+						}
+					}
+				})
 			})
 		} catch (err) {
 			if (err instanceof PrismaClientKnownRequestError) {
@@ -160,21 +177,30 @@ export class RelationsService {
 	}
 
 	async block(userId: bigint, targetId: bigint) {
-		await this.conn.$transaction(async (t) => {
-			await t.relation.deleteMany({
-				where: { OR: [
-					{owner_id: userId, other_id: targetId, relationship: { in: ["FRIEND", "INVITE_OUTGOING", "INVITE_INGOING"] }},
-						{owner_id: targetId, other_id: userId, relationship: { in: ["FRIEND", "INVITE_INGOING", "INVITE_INGOING"] }},
-					]},
+		try {
+			await this.conn.$transaction(async (t) => {
+				await t.relation.deleteMany({
+					where: { OR: [
+						{owner_id: userId, other_id: targetId, relationship: { in: ["FRIEND", "INVITE_OUTGOING", "INVITE_INGOING"] }},
+							{owner_id: targetId, other_id: userId, relationship: { in: ["FRIEND", "INVITE_INGOING", "INVITE_INGOING"] }},
+						]},
+				})
+				await t.relation.create({
+					data: {
+						owner_id: userId,
+						other_id: targetId,
+						relationship: "BLOCKED",
+					}
+				})
 			})
-			await t.relation.create({
-				data: {
-					owner_id: userId,
-					other_id: targetId,
-					relationship: "BLOCKED",
+		} catch (err) {
+			if (err instanceof PrismaClientKnownRequestError) {
+				if (err.code === "P2025") {
+					throw new NotFoundException("User not found")
 				}
-			})
-		})
+			}
+			throw err;
+		}
 	}
 
 	async unblock(userId: bigint, targetId: bigint) {

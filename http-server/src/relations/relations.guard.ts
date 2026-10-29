@@ -1,22 +1,30 @@
 import {CanActivate, ExecutionContext} from "@nestjs/common"
+import {PrismaService} from "../prisma/prisma.service.js";
 
 /**
- * Zkontroluje jestli uživatel s požadvakem je target nebo sender **z neověřené pozvánky**
+ * Zkontroluje permise na pozvánku
+ * - inviteId - z params
  */
 
-export class SenderInUntrustedFriendRequest implements CanActivate {
-	canActivate(context: ExecutionContext) {
+export class HasInvitePermissions implements CanActivate {
+	constructor(private readonly conn: PrismaService) {}
+
+	async canActivate(context: ExecutionContext) {
 		const req = context.switchToHttp().getRequest();
 		const verified = req.session.verified;
 		const userId = req.session.userId;
 		if (!verified) {
 			return false;
 		}
-		const {senderId, targetId} = req.body;
-		if (userId !== senderId && userId !== targetId) {
+		const inviteId = req.params.inviteId;
+		if (!inviteId) {
 			return false;
 		}
-		if (!senderId || !targetId) {
+		const result = await this.conn.relation.findFirst({
+			where: { id: inviteId },
+			select: { owner_id: userId },
+		})
+		if (!result || result.owner_id != userId) {
 			return false;
 		}
 		return true;
