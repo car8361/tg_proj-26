@@ -1,10 +1,22 @@
-import {Body, Controller, Delete, Get, Param, Patch, Post, Res, UseGuards} from '@nestjs/common';
+import {
+  Body,
+  ConflictException,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  Req,
+  Res,
+  UseGuards
+} from '@nestjs/common';
 import { RelationsService } from './relations.service.js';
 import {SessionVerified} from "../auth/auth.guard.js";
 import {SessionUserId} from "../common/decorators/session-user-id/session-user-id.decorator.js";
 import {AcceptInviteDto, BlockDto, DeleteFriendDto, DeleteInviteDto, InviteDto} from "./dto/relations.dto.js";
-import {HasInvitePermissions} from "./relations.guard.js";
-import type {Response} from "express";
+import type {Response, Request} from "express";
 import {ParseBigintPipe} from "../common/decorators/parse-bigint-pipe/parse-bigint-pipe.decorator.js";
 
 @Controller('relations')
@@ -13,61 +25,77 @@ export class RelationsController {
   constructor(private readonly relationsService: RelationsService) {}
 
   @Get('invites/pending')
-  async getPendingInvites(@SessionUserId() userId: bigint, @Res() res: Response) {
+  @HttpCode(200)
+  async getPendingInvites(@SessionUserId() userId: bigint) {
     const result = await this.relationsService.getIngoingInvites(userId);
-    return res.status(200).json({success: true, invites: result});
+    return {success: true, invites: result};
   }
 
   @Get('invites/outgoing')
-  async getSentInvites(@SessionUserId() userId: bigint, @Res() res: Response) {
+  @HttpCode(200)
+  async getSentInvites(@SessionUserId() userId: bigint) {
     const result = await this.relationsService.getOutgoingInvites(userId);
-    return res.status(200).json({success: true, invites: result});
+    return {success: true, invites: result};
   }
 
   @Post('invites/')
-  async postInvite(@Body() body: InviteDto, @SessionUserId() userId: bigint, @Res() res: Response) {
-    const {receiverName} = body;
-    await this.relationsService.createInvite(userId, receiverName);
-    return res.status(201).json({success: true});
+  @HttpCode(201)
+  async postInvite(@Body() body: InviteDto, @SessionUserId() userId: bigint, @Req() req: Request) {
+    const {targetName} = body;
+    if (req.session.username === targetName) {
+      console.log("Case 1")
+      console.log(`USERNAME: ${req.session.username}, TARGET NAME: ${targetName}`);
+      throw new ConflictException("Cannot send invite to yourself");
+    }
+    await this.relationsService.createInvite(userId, targetName);
+    return {success: true};
   }
 
   @Delete('invites/:inviteId')
-  @UseGuards(HasInvitePermissions)
-  async deleteRequest(@Param('inviteId', ParseBigintPipe) inviteId: bigint, @SessionUserId() userId: bigint, @Res() res: Response) {
+  @HttpCode(204)
+  async deleteRequest(@Param('inviteId', ParseBigintPipe) inviteId: bigint, @SessionUserId() userId: bigint) {
     await this.relationsService.deleteInvite(userId, inviteId);
-    return res.status(204).json({success: true});
+    return {success: true};
   }
 
   @Patch('invites/:inviteId')
-  async patchRequest(@Param('inviteId', ParseBigintPipe) inviteId: bigint, @SessionUserId() userId: bigint, @Res() res: Response) {
+  @HttpCode(204)
+  async patchRequest(@Param('inviteId', ParseBigintPipe) inviteId: bigint, @SessionUserId() userId: bigint) {
     await this.relationsService.acceptInvite(userId, inviteId);
-    return res.status(204).json({success: true});
+    return {success: true};
   }
 
-  @Get('friends/')
-  async getFriends(@SessionUserId() userId: bigint, @Res() res: Response) {
+  @Get('friends')
+  @HttpCode(200)
+  async getFriends(@SessionUserId() userId: bigint) {
     const result = await this.relationsService.myFriends(userId);
-    return res.status(200).json({success: true, friends: result});
+    return {success: true, friends: result};
   }
 
-  @Delete('friends/')
-  async deleteFriends(@Body() body: DeleteFriendDto, @SessionUserId() userId: bigint, @Res() res: Response) {
-    const {friendId} = body;
-    await this.relationsService.deleteFriend(userId, friendId);
-    return res.status(204).json({success: true});
+  @Delete('friends')
+  @HttpCode(204)
+  async deleteFriends(@Body() body: DeleteFriendDto, @SessionUserId() userId: bigint) {
+    const {targetId} = body;
+    await this.relationsService.deleteFriend(userId, targetId);
+    return {success: true};
   }
 
   @Post('block')
-  async block(@Body() body: BlockDto, @SessionUserId() userId: bigint, @Res() res: Response) {
+  @HttpCode(201)
+  async block(@Body() body: BlockDto, @SessionUserId() userId: bigint) {
     const {targetId} = body;
+    if (userId === targetId) {
+      throw new ConflictException('Cannot block yourself');
+    }
     await this.relationsService.block(userId, targetId);
-    return res.status(201).json({success: true});
+    return {success: true};
   }
 
   @Delete('block')
-  async unblock(@Body() body: BlockDto, @SessionUserId() userId: bigint, @Res() res: Response) {
+  @HttpCode(204)
+  async unblock(@Body() body: BlockDto, @SessionUserId() userId: bigint) {
     const {targetId} = body;
     await this.relationsService.unblock(userId, targetId);
-    return res.status(204).json({success: true});
+    return {success: true};
   }
 }

@@ -17,7 +17,7 @@ export class AuthService {
         select: { id: true, username: true },
       });
 
-      return { id: user.id, username: user.username };
+      return { id: user.id.toString(), username: user.username };
     } catch (err) {
       if (err instanceof PrismaClientKnownRequestError) {
         if (err.code === "P2002") {
@@ -49,7 +49,10 @@ export class AuthService {
     return {id: userQuery?.id, email: userQuery?.email, username: userQuery?.username };
   }
   async sendMailCode(email: string, userId: bigint) {
-    const code = randomInt(1000000).toString();
+    let code = randomInt(1000000).toString();
+    while (code.length !== 6) {
+      code = `0${code}`;
+    }
     await this.conn.email_code.deleteMany({
       where: {user_id: userId}
     });

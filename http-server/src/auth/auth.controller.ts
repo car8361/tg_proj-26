@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Body, HttpCode, Req, Ip, UseGuards, Res, Query, ConflictException,
-  InternalServerErrorException, Delete
+  InternalServerErrorException, Delete, HttpException, HttpStatus, UnauthorizedException
 } from '@nestjs/common';
 import { AuthService } from './auth.service.js';
 import { RegisterDto } from "./dto/register.dto.js";
@@ -18,12 +18,13 @@ export class AuthController {
   ) {}
 
   @Post('register')
-  async register(@Body() body: RegisterDto, @Ip() ip: string, @Res() res: Response) {
+  @HttpCode(201)
+  async register(@Body() body: RegisterDto, @Ip() ip: string) {
     const { username, email, password, confirmPassword } = body;
     if (password !== confirmPassword) {
-      return res.status(400).json({ok: false, message: "Passwords don't match"});
+      throw new HttpException("Passwords don't match", 400);
     }
-    return res.status(201).json(JSON.stringify((await this.authService.registerUser(username, email, password, ip)).toString()));
+    return this.authService.registerUser(username, email, password, ip);
   }
 
   @Post('login')
@@ -51,21 +52,23 @@ export class AuthController {
   }
 
   @Post('logout')
-  async logout(@Req() req: Request, @Res() res: Response) {
+  @HttpCode(200)
+  async logout(@Req() req: Request, @Res({passthrough: true}) res: Response) {
     const userId = req.session.userId;
     await new Promise<void>((resolve, reject) => {
       req.session.destroy((err: Error) => (err ? reject(err) : resolve()));
     })
     res.clearCookie(process.env.SESSION_NAME!);
     this.authService.logoutEmit(userId);
-    return res.status(200).json({ok: true});
+    return {ok: true};
   }
 
   @Post('2fa')
   @UseGuards(SessionUID)
+  @HttpCode(201)
   async _2fa(
     @Req() req: Request,
-    @Res() res: Response,
+    @Res({passthrough: true}) res: Response,
     @Body() body: $2faDto,
     @SessionUserId() userId: bigint,
   ) {
@@ -80,14 +83,15 @@ export class AuthController {
     }
     if (verified) {
       req.session.verified = true;
-      return res.status(201).json({ok: true});
+      return {ok: true};
     } else {
-      return res.status(401).json({ok: false});
+      throw new UnauthorizedException();
     }
   }
 
   @Delete()
   @UseGuards(SessionUID)
+  @HttpCode(204)
   async del(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
@@ -101,10 +105,11 @@ export class AuthController {
       });
     });
     res.clearCookie('connect.sid');
-    return res.status(204).json({ok: true});
+    return {ok: true};
   }
 
   @Get('user')
+  @HttpCode(200)
   async user(@Query() { username }: UsernameDto) {
     let user = await this.authService.getUser(username);
     if (!user?.id) {
@@ -114,6 +119,7 @@ export class AuthController {
   }
 
   @Get('email')
+  @HttpCode(200)
   async email(@Query() { email }: EmailDto) {
     let user = await this.authService.getEmail(email);
     if (!user?.id) {
@@ -123,7 +129,8 @@ export class AuthController {
   }
 
   @Get('me')
-  async me(@Req() req: Request, @Res() res: Response) {
-    return res.status(200).json({userId: req.session.userId, verified: req.session.verified, username: req.session.username});
+  @HttpCode(200)
+  async me(@Req() req: Request) {
+    return {userId: req.session.userId, verified: req.session.verified, username: req.session.username};
   }
 }

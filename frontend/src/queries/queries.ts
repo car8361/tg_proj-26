@@ -1,5 +1,13 @@
 import {useMutation, useQuery, useSuspenseQuery} from "@tanstack/react-query";
-import type {Auth, FriendRequestReq, GetChats, GetFriends, GetMessages, Register} from "../cacheTypes/auth.ts";
+import type {
+	Auth,
+	FriendRequestReq,
+	GetChats,
+	GetFriends,
+	GetMessages, GetOutgoing,
+	GetPending,
+	Register
+} from "../cacheTypes/auth.ts";
 import { queryClient } from "../queryClient.ts";
 import type { Login } from "../cacheTypes/auth.ts";
 import {useNavigate} from "react-router";
@@ -147,12 +155,12 @@ export const useQueryFriends = () => useQuery<GetFriends>({
 		const res = await fetch("/api/relations/friends", {
 			method: "GET",
 			credentials: "include",
-		}).then(res => res.json());
+		});
 		if (!res.ok) {
 			if (res.status === 429) {
 				throw new Error("Rate limit reached")
 			}
-			throw Error(res.body?.message ?? "Server Error")
+			throw Error("Server Error")
 		}
 		return res.json();
 	},
@@ -198,8 +206,9 @@ export const useMutationFriendRequest = (setInviteRes: React.Dispatch<SetStateAc
 		if (res.ok) {
 			setInviteRes("Invite successfully sent!");
 		} else if (res.status === 409) {
-			setInviteRes("You can't send yourself a friend request")
+			setInviteRes("Friend request already sent")
 		}
+		location.reload();
 	}
 })
 
@@ -218,3 +227,75 @@ export const useMutationDeleteChat = () => useMutation({
 		}
 	}
 })
+
+export const useQueryPending = () => useQuery({
+	queryKey: ["invites_pending"],
+	queryFn: async (): Promise<GetPending> => {
+		const res = await fetch(`/api/relations/invites/pending`, {
+			credentials: "include",
+		});
+		return res.json();
+	},
+})
+
+export const useQueryOutgoing = () => useQuery({
+	queryKey: ["invites_outgoing"],
+	queryFn: async (): Promise<GetOutgoing> => {
+		const res = await fetch(`/api/relations/invites/outgoing`, {
+			credentials: "include",
+		});
+		return res.json();
+	},
+})
+
+export const useMutationInvitesDelete = () => useMutation({
+	mutationFn: async (inviteId: string) => {
+		const res = await fetch(`/api/relations/invites/${inviteId}`, {
+			method: "DELETE",
+			credentials: "include",
+		});
+		return res.json();
+	},
+	onSuccess: (res) => {
+		if (res.ok) {
+			queryClient.invalidateQueries({queryKey: ["invites_pending"]});
+			queryClient.invalidateQueries({queryKey: ["invites_outgoing"]});
+			location.reload();
+		}
+	}
+})
+
+export const useMutationInvitesAccept = () => useMutation({
+	mutationFn: async (inviteId: string) => {
+		const res = await fetch(`/api/relations/invites/${inviteId}`, {
+			method: "PATCH",
+			credentials: "include",
+		});
+		return res.json();
+	},
+	onSuccess: (res) => {
+		if (res.ok) {
+			queryClient.invalidateQueries({queryKey: ["friends"]});
+			location.reload();
+		}
+	}
+})
+
+	export const useMutationDeleteFriend = () => useMutation({
+		mutationFn: async (targetId: string) => {
+			console.log("FUNCTION GOT: ", targetId);
+			const res = await fetch(`/api/relations/friends`, {
+				method: "DELETE",
+				credentials: "include",
+				headers: {"Content-Type": "application/json"},
+				body: JSON.stringify({targetId}),
+			})
+			return res.json();
+		},
+		onSuccess: (res) => {
+			console.log("RES: ", res);
+			if (res.ok) {
+				location.reload();
+			}
+		}
+	})

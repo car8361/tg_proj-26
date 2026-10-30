@@ -45,10 +45,11 @@ export class RelationsService {
 			return;
 		} catch (err) {
 			if (err instanceof Prisma.PrismaClientKnownRequestError) {
-				if (err.code = "P2002") { //unique constraint err code
+				if (err.code === "P2002") { //unique constraint err code
+					console.log("Case 2")
 					throw new ConflictException("Friend request already sent")
 				}
-				if (err.code = "P2025") {
+				if (err.code === "P2025") {
 					throw new NotFoundException("User doesn't exist");
 				}
 			}
@@ -96,10 +97,6 @@ export class RelationsService {
 					where: { owner_id_other_id: { owner_id: rowOtherId.other_id, other_id: userId }, relationship: "INVITE_OUTGOING" },
 					data: { relationship: "FRIEND"}
 				})
-				await t.relation.update({
-					where: { owner_id_other_id: { owner_id: userId, other_id: rowOtherId.other_id }, relationship: "INVITE_INGOING" },
-					data: { relationship: "FRIEND"}
-				})
 				this.gateway.emitMessageToRoom([userId.toString(), rowOtherId.other_id.toString()], "relations:invites:accepted", {})
 			})
 		} catch (err) {
@@ -129,47 +126,32 @@ export class RelationsService {
 		const relations = res.map(res => ({
 			owner_username: res.relation_owner_user_reference.username,
 			other_username: res.relation_other_user_reference.username,
-			owner_id: res.relation_owner_user_reference.id,
-			other_id: res.relation_other_user_reference.id,
+			owner_id: res.relation_owner_user_reference.id.toString(),
+			other_id: res.relation_other_user_reference.id.toString(),
 		}))
 
 		return relations;
 	}
 
-	async deleteFriend(userId: bigint, relationId: bigint) {
+	async deleteFriend(userId: bigint, otherId: bigint) {
 		try {
 			await this.conn.$transaction(async (t) => {
-				const otherIdRow = await t.relation.delete({
+				await t.relation.delete({
 					where: {
 						relationship: 'FRIEND',
-						owner_id: userId,
-						id: relationId,
+						owner_id_other_id: { owner_id: userId, other_id: otherId },
 					},
-					select: { other_id: true }
 				})
 				await t.relation.delete({
 					where: {
 						relationship: 'FRIEND',
-						owner_id_other_id: {
-							owner_id: otherIdRow.other_id,
-							other_id: userId
-						}
+						owner_id_other_id: { owner_id: otherId, other_id: userId }
 					}
 				})
-				await t.relation.delete({
-					where: {
-						relationship: 'FRIEND',
-						owner_id_other_id: {
-							owner_id: userId,
-							other_id: otherIdRow.other_id
-						}
-					}
-				})
-				this.gateway.emitMessageToRoom([userId.toString(), otherIdRow.other_id.toString()], "relations:friends:delete", {})
 			})
 		} catch (err) {
 			if (err instanceof PrismaClientKnownRequestError) {
-				if (err.code = "P2025") {
+				if (err.code === "P2025") {
 					throw new ConflictException("Friend not found")
 				}
 			}

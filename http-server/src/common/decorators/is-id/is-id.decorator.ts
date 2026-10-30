@@ -4,9 +4,7 @@ import {Transform} from "class-transformer";
 
 const IsValidId = (value: unknown) => typeof value === "bigint" && value > 0n && value <= 9223372036854775807n;
 
-const toBigInt = (value: unknown) => {
-	typeof value === "string" && /^[1-9]\d{0,18}$/.test(value) ? BigInt(value) : value;
-}
+const toBigInt = (value: unknown) => typeof value === "string" && /^[1-9]\d{0,18}$/.test(value) ? BigInt(value) : value;
 
 export const IsId = () =>
 	applyDecorators(

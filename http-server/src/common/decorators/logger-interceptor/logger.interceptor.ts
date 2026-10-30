@@ -14,7 +14,7 @@ import { randomUUID } from "node:crypto";
 export class GlobalInterceptor implements NestInterceptor {
 	private readonly logger = new Logger('http');
 
-	intercept(context:ExecutionContext, next:CallHandler<any>) {
+	intercept(context:ExecutionContext, next:CallHandler<{data: unknown}>) {
 		const req: Request = context.switchToHttp().getRequest();
 		const requestId = randomUUID();
 		const secret = ["password", "email"];
@@ -26,8 +26,10 @@ export class GlobalInterceptor implements NestInterceptor {
 				return ` ${pair[0]}: ${pair[1]}`;
 			}
 		})}`);
-		const res = next.handle().pipe(
-			tap(),
+		return next.handle().pipe(
+			tap((res) => {
+				this.logger.log(`ID: ${requestId}, Responding to ip ${req.ip} with ${JSON.stringify(res)}`);
+			}),
 			timeout(5000),
 			catchError(err => {
 				if (err instanceof TimeoutError) {
@@ -37,8 +39,6 @@ export class GlobalInterceptor implements NestInterceptor {
 				throw err;
 			}),
 		)
-		this.logger.log(`ID: ${requestId}, Responding to ip ${req.ip} with ${res}`);
-		return res;
 	}
 
 	private generateTime() {

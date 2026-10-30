@@ -54,6 +54,7 @@ export interface FriendRequestReq {
 }
 
 export interface GetFriends {
+	success: boolean;
 	friends: {
 		owner_username: string;
 		other_username: string;
@@ -66,4 +67,24 @@ export interface GetMessages {
 	messages: {
 
 	}
+}
+
+export interface GetPending {
+	success: boolean;
+	invites: {
+		invite_id: string,
+		user_id: string,
+		username: string,
+		created_at: string
+	}[]
+}
+
+export interface GetOutgoing {
+	success: boolean;
+	invites: {
+		invite_id: string,
+		user_id: string,
+		username: string,
+		created_at: string
+	}[]
 }
