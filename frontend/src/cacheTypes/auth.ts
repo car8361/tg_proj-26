@@ -49,6 +49,14 @@ export interface GetChats {
 	}[];
 }
 
+export interface GetChat {
+	chat: {
+		chat_name: string;
+		id: string;
+	};
+}
+
+
 export interface FriendRequestReq {
 	targetName: string;
 }
@@ -86,5 +94,24 @@ export interface GetOutgoing {
 		user_id: string,
 		username: string,
 		created_at: string
+	}[]
+}
+
+export interface GetChatMessages {
+	success: boolean;
+	messages: {
+		id: string;
+		chat_id: string;
+		username: string;
+		msg: string;
+		created_at: string;
+	}[]
+}
+
+export interface GetChatMembers {
+	success: boolean;
+	members: {
+		id: string;
+		username: string;
 	}[]
 }

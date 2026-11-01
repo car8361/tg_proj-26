@@ -1,7 +1,7 @@
 import {useMutation, useQuery, useSuspenseQuery} from "@tanstack/react-query";
 import type {
 	Auth,
-	FriendRequestReq,
+	FriendRequestReq, GetChat, GetChatMembers, GetChatMessages,
 	GetChats,
 	GetFriends,
 	GetMessages, GetOutgoing,
@@ -281,21 +281,75 @@ export const useMutationInvitesAccept = () => useMutation({
 	}
 })
 
-	export const useMutationDeleteFriend = () => useMutation({
-		mutationFn: async (targetId: string) => {
-			console.log("FUNCTION GOT: ", targetId);
-			const res = await fetch(`/api/relations/friends`, {
-				method: "DELETE",
-				credentials: "include",
-				headers: {"Content-Type": "application/json"},
-				body: JSON.stringify({targetId}),
-			})
-			return res.json();
+export const useMutationDeleteFriend = () => useMutation({
+	mutationFn: async (targetId: string) => {
+		console.log("FUNCTION GOT: ", targetId);
+		const res = await fetch(`/api/relations/friends`, {
+			method: "DELETE",
+			credentials: "include",
+			headers: {"Content-Type": "application/json"},
+			body: JSON.stringify({targetId}),
+		})
+		return res.json();
 		},
-		onSuccess: (res) => {
-			console.log("RES: ", res);
-			if (res.ok) {
-				location.reload();
-			}
+	onSuccess: (res) => {
+		console.log("RES: ", res);
+		if (res.ok) {
+			location.reload();
 		}
-	})
+	}
+})
+
+export const useQueryChatMembers = (chatId: string | undefined) => useQuery({
+	queryKey: ["chat_members", chatId],
+	queryFn: async (): Promise<GetChatMembers> => {
+		const res = await fetch(`/api/chats/${chatId}/members`, {
+			method: "GET",
+			credentials: "include"
+		})
+		return res.json();
+	},
+	enabled: chatId !== undefined,
+})
+
+export const useQueryChatMessages = (chatId: string | undefined) => useQuery({
+	queryKey: ["chat_messages", chatId],
+	queryFn: async (): Promise<GetChatMessages> => {
+		console.log("CHATMESSAGESFETCH")
+		const res = await fetch(`/api/chats/${chatId}/messages`, {
+			method: "GET",
+			credentials: "include"
+		})
+		console.log(res)
+		return res.json();
+	},
+	enabled: chatId !== undefined,
+})
+
+export const useMutationSendMessage = () => useMutation({
+	mutationFn: async ({chatId, message} : {chatId: string, message: string}) => {
+		const res = await fetch(`/api/chats/${chatId}/messages`, {
+			method: "POST",
+			credentials: "include",
+			headers: {"Content-Type": "application/json"},
+			body: JSON.stringify({message})
+		})
+		return res.json();
+	},
+	onSuccess: (res, {chatId}) => {
+		queryClient.invalidateQueries({queryKey: ["chat_messages", chatId]});
+		location.reload()
+	}
+})
+
+export const useQueryChat = (chatId: string | undefined) => useQuery({
+	queryKey: ["chat_details", chatId],
+	queryFn: async (): Promise<GetChat> => {
+		const res = await fetch(`/api/chats/${chatId}`, {
+			method: "GET",
+			credentials: "include",
+		});
+		return res.json();
+	},
+	enabled: chatId !== undefined
+})

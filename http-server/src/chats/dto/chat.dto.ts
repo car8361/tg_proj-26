@@ -10,8 +10,6 @@ import { privilage } from "../../generated/prisma/enums.js";
 
 
 export class MessageDto {
-	@IsId()
-	chatId: bigint;
 	@IsString()
 	@IsNotEmpty()
 	@Length(1, 500)

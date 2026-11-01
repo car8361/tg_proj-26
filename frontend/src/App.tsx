@@ -28,7 +28,7 @@ function App() {
 					<Route path="register" element={<Register/>}/>
 					<Route path="home" element={<Home/>}/>
 					<Route path="dashboard" element={<AppPanel><Dashboard/></AppPanel>}/>
-					<Route path="chats" element={<AppPanel><Chats /></AppPanel>}/>
+					<Route path="/chats/:chatId?" element={<AppPanel><Chats /></AppPanel>}/>
 					<Route path="friends" element={<AppPanel><Friends /></AppPanel>}/>
 					<Route path="*" element={<NotFound />}/>
 				</Routes>

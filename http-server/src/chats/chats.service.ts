@@ -34,7 +34,7 @@ export class ChatsService {
 			select: { user_id: true, chat_user_user_reference: true }
 		})
 		let roomIds = this.usersRowToEmitField(users);
-		this.gateway.emitMessageToRoom(roomIds, "chats:messages:sent", {senderName: username, userId: userId.toString(), message});
+		this.gateway.emitMessageToRoom(roomIds, "chats:messages:sent", {chatId: chatId.toString(), senderName: username, userId: userId.toString(), message});
 		return;
 	}
 
@@ -106,22 +106,27 @@ export class ChatsService {
 		}
 	}
 
-	async getMessages(chatId: bigint, messageId: bigint, amount: number) {
-		const msgs = this.conn.chat_message.findMany({
-			where: { chat_id: chatId, id: {lt: messageId} },
-			orderBy: { id: "desc"},
-			take: amount,
+	async getMessages(chatId: bigint) {
+		const msgs = await this.conn.chat_message.findMany({
+			where: { chat_id: chatId },
+			orderBy: { id: "asc"},
 			select: {
 				id: true,
 				chat_id: true,
-				message_owner: {
+				chat_message_user_reference: {
 					select: {username: true}
 				},
 				msg: true,
 				created_at: true
 			}
 		})
-		return msgs;
+		return msgs.map((m, i) => ({
+			id: m.id.toString(),
+			chat_id: m.chat_id.toString(),
+			username: m.chat_message_user_reference.username,
+			msg: m.msg,
+			created_at: m.created_at,
+		}));
 	}
 
 	async createChat(userId: bigint) {
@@ -136,6 +141,26 @@ export class ChatsService {
 			select: { chat_user_chat_reference: { select: { chat_name: true, id: true }}}
 		});
 		return res.map((r) => ({chat_name: r.chat_user_chat_reference.chat_name, id: r.chat_user_chat_reference.id.toString()}));
+	}
+
+	async getChat(userId: bigint, chatId: bigint) {
+		try {
+			const res = await this.conn.chat_user.findFirstOrThrow({
+				where: {user_id: userId, chat_id: chatId},
+				select: {chat_user_chat_reference: {select: {chat_name: true, id: true}}}
+			});
+			return {
+				chat_name: res?.chat_user_chat_reference.chat_name,
+				id: res?.chat_user_chat_reference.id.toString()
+			};
+		} catch (err) {
+			if (err instanceof Prisma.PrismaClientKnownRequestError) {
+				if (err.code === "P2025") {
+					throw new NotFoundException("Invalid chat ID");
+				}
+			}
+			throw err;
+		}
 	}
 
 	async updateChat(chatId: bigint, name: string) {
@@ -176,9 +201,9 @@ export class ChatsService {
 	async getMembers(chatId: bigint) {
 		const userRows = await this.conn.chat_user.findMany({
 			where: { chat_id: chatId },
-			select: { chat_user_user_reference: { select: { id: true, username: true } } }
+			select: { privilage: true, chat_user_user_reference: { select: { id: true, username: true } } }
 		})
-		return userRows.map(r => ({id: r.chat_user_user_reference.id.toString(), username: r.chat_user_user_reference.username}));
+		return userRows.map(r => ({id: r.chat_user_user_reference.id.toString(), username: r.chat_user_user_reference.username, privilage: r.privilage}));
 	}
 
 	async createMember(userId: bigint, chatId: bigint) {

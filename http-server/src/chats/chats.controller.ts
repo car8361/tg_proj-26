@@ -20,10 +20,15 @@ import type { Response, Request } from "express";
 export class ChatsController {
   constructor(private readonly chatsService: ChatsService) {}
 
-  @Post("/messages")
+  @Post("/:chatId/messages")
   @HttpCode(201)
-  async postMessage(@Body() body: MessageDto, @SessionUserId() userId: bigint, @SessionUsername() username: string, @Res() res: Response) {
-    await this.chatsService.handleMessage(userId, body.chatId, username, body.message);
+  async postMessage(
+      @Body() body: MessageDto,
+      @Param("chatId", ParseBigintPipe) chatId: bigint,
+      @SessionUserId() userId: bigint,
+      @SessionUsername() username: string
+  ) {
+    await this.chatsService.handleMessage(userId, chatId, username, body.message);
     return {success: true};
   }
 
@@ -50,26 +55,25 @@ export class ChatsController {
     return {success: true};
   }
 
-  @Get("/messages")
+  @Get("/:chatId/messages")
   @HttpCode(200)
-  async getMessages(@Body() body: GetMessagesDto) {
-    const { chatId, messageId } = body;
-    const amount = 50;
-    const messages = await this.chatsService.getMessages(chatId, messageId, amount);
+  async getMessages(@Param('chatId', ParseBigintPipe) chatId: bigint) {
+    const messages = await this.chatsService.getMessages(chatId);
     return {success: true, messages};
   }
 
   @Get("/:chatId/members")
   @HttpCode(200)
-  @UseGuards(IsHigherPriority)
+  @Roles(["OWNER", "ADMIN", "USER"])
+  @UseGuards(IsChatPrivilage)
   async getMembers(@Param('chatId', ParseBigintPipe) chatId: bigint) {
-    const members = this.chatsService.getMembers(chatId);
+    const members = await this.chatsService.getMembers(chatId);
     return {success: true, members};
   }
 
   @Post("/:chatId/members")
   @UseGuards(IsChatPrivilage)
-  @Roles(["ADMIN"])
+  @Roles(["OWNER", "ADMIN"])
   @HttpCode(201)
   async addMember(@Body() body: CreateMemberDto, @Param('chatId', ParseBigintPipe) chatId: bigint) {
     const { userId } = body;
@@ -100,6 +104,13 @@ export class ChatsController {
   async getChats(@SessionUserId() userId: bigint) {
     const result = await this.chatsService.getChats(userId);
     return {chats: result};
+  }
+
+  @Get("/:chatId")
+  @HttpCode(200)
+  async getChat(@SessionUserId() userId: bigint, @Param('chatId', ParseBigintPipe) chatId: bigint) {
+    const result = await this.chatsService.getChat(userId, chatId);
+    return {chat: result};
   }
 
   @Post("/")
