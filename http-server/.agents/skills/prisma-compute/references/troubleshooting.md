@@ -104,7 +104,7 @@ With PostgreSQL, no `--database-url`, and no `--no-prisma-postgres`, setup can p
 
 Use a disposable real database URL if Prisma commands need to run.
 
-## Auth Fails
+## Types Fails
 
 Symptoms:
 

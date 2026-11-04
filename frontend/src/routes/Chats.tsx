@@ -5,7 +5,7 @@ import {
 	useSuspenseQueryChats,
 	useQueryChatMessages,
 	useMutationSendMessage, useQueryChat
-} from "../queries/queries.ts";
+} from "../queries/utils.ts";
 import {Fragment, useState} from "react";
 import {useNavigate, useParams} from "react-router";
 

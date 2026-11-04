@@ -85,7 +85,7 @@ Use this skill for:
 | Priority | Category | Impact | Prefix |
 |----------|----------|--------|--------|
 | 1 | Command verification | CRITICAL | `verify-` |
-| 2 | Auth and workspace selection | CRITICAL | `auth-` |
+| 2 | Types and workspace selection | CRITICAL | `auth-` |
 | 3 | Framework readiness | CRITICAL | `framework-` |
 | 4 | Runtime host and port binding | CRITICAL | `runtime-` |
 | 5 | Typed Compute config | HIGH | `config-` |
@@ -104,7 +104,7 @@ Use this skill for:
 - `verify-config-support` - Treat `prisma.compute.ts` as the typed Compute config; inspect the project's config and generated scripts before editing or deploying.
 - `verify-auth-workspace-support` - Use `@prisma/cli auth workspace` commands for local workspace list/use/logout flows.
 
-### 2. Auth and Workspace Selection
+### 2. Types and Workspace Selection
 
 - `auth-source-precedence` - A non-empty `PRISMA_SERVICE_TOKEN` is the active auth source for commands and local OAuth workspaces are ignored for execution. If it is set but empty, the CLI should fail instead of falling back to stored OAuth.
 - `auth-multi-workspace` - `auth login` can store OAuth sessions for multiple workspaces on the same machine. The active workspace pointer selects which stored OAuth grant normal commands use.

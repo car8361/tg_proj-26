@@ -1,5 +1,5 @@
 import {io, Socket} from "socket.io-client";
-import {useSuspenseQueryAuth} from "./queries/queries.ts";
+import {useSuspenseQueryAuth} from "./queries/utils.ts";
 import {type ReactNode, useEffect} from "react";
 import {queryClient} from "./queryClient.ts";
 

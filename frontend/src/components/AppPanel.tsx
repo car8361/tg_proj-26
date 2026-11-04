@@ -1,15 +1,15 @@
 import DashboardButton from "./DashboardMenuButton.tsx";
 import {type ReactNode, useEffect, useState} from "react";
 import {useNavigate} from "react-router";
-import type {Auth} from "../cacheTypes/auth.ts";
+import type {Types} from "../types/types.ts";
 import {queryClient} from "../queryClient.ts";
 
 function AppPanel({children} : { children?: ReactNode }) {
 	const navigate = useNavigate();
-	const [auth, setAuth] = useState<Auth | undefined>(undefined);
+	const [auth, setAuth] = useState<Types | undefined>(undefined);
 
 	useEffect(() => {
-		const tempAuth = queryClient?.getQueryData<Auth>(["auth"])
+		const tempAuth = queryClient?.getQueryData<Types>(["auth"])
 		if (!tempAuth?.userId) {
 			navigate("/login");
 		}

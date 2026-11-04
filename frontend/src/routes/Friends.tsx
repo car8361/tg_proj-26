@@ -5,7 +5,7 @@ import {
 	useQueryFriends,
 	useQueryOutgoing,
 	useQueryPending
-} from "../queries/queries.ts";
+} from "../queries/utils.ts";
 import {useState} from "react";
 
 function Friends() {

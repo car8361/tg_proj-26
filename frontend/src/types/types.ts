@@ -30,7 +30,7 @@ export const LoginZod = z.object({
 	password: z.string()
 })
 
-export interface Auth {
+export interface Types {
 	userId: string;
 	verified: string;
 	username: string;
@@ -114,4 +114,9 @@ export interface GetChatMembers {
 		id: string;
 		username: string;
 	}[]
+}
+
+export enum ChatType {
+	DIRECT,
+	GROUP
 }

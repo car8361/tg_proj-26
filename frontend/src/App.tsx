@@ -10,12 +10,12 @@ import NotFound from "./routes/NotFound.tsx";
 import Footer from "./components/Footer.tsx";
 import Chats from "./routes/Chats.tsx";
 import Friends from "./routes/Friends.tsx";
-import {useSuspenseQueryAuth} from "./queries/queries.ts";
+import {useSuspenseQueryAuth} from "./queries/utils.ts";
 import AppPanel from "./components/AppPanel.tsx";
 
 function App() {
 	const { data } = useSuspenseQueryAuth();
-	console.log("Auth data: ", data);
+	console.log("Types data: ", data);
 	const showVerifyOverlay = data.userId && data.verified === "false";
 	return (
 		<div className="flex flex-col min-h-dvh">

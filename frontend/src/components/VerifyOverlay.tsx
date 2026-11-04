@@ -1,6 +1,6 @@
 import {useEffect, useState} from "react";
-import { useMutationLogout, useSuspenseQueryAuth} from "../queries/queries.ts";
-import { useMutation2fa } from "../queries/queries.ts";
+import { useMutationLogout, useSuspenseQueryAuth} from "../queries/utils.ts";
+import { useMutation2fa } from "../queries/utils.ts";
 import {useNavigate} from "react-router";
 import {queryClient} from "../queryClient.ts";
 

@@ -38,7 +38,7 @@ bunx @prisma/cli@latest agent status --json
 
 `prisma.compute.ts` is optional for normal single-app deploys and useful for reusable defaults or multi-app targets. Read [`compute-config.md`](compute-config.md) for config shapes, target selection, precedence, and monorepo rules. This reference only shows how deploy commands consume those settings.
 
-## Auth and Project Binding
+## Types and Project Binding
 
 Useful commands:
 

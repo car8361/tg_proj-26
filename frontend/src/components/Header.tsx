@@ -1,13 +1,13 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {useState} from "react";
 import {useNavigate} from "react-router";
-import type { Auth } from "../cacheTypes/auth";
-import {useMutationDeleteAccount, useMutationLogout} from "../queries/queries.ts";
+import type { Types } from "../types/types.ts";
+import {useMutationDeleteAccount, useMutationLogout} from "../queries/utils.ts";
 
 function Header() {
 	const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
-	const { data } = useSuspenseQuery<Auth>({
+	const { data } = useSuspenseQuery<Types>({
 		queryKey: ["auth"],
 		queryFn: async () => {
 			const res = await fetch ("/api/auth/me");
@@ -39,7 +39,7 @@ function Header() {
 function UserMenu() {
 	const navigate = useNavigate();
 
-	const {data} = useSuspenseQuery<Auth>({
+	const {data} = useSuspenseQuery<Types>({
 		queryKey: ["auth"],
 		queryFn: async () => {
 			const res = await fetch("/api/auth/me");

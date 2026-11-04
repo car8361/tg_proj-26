@@ -112,7 +112,7 @@ Explore the schema and endpoints using:
 - OpenAPI docs: `https://api.prisma.io/v1/doc`
 - Swagger Editor: `https://api.prisma.io/v1/swagger-editor`
 
-Auth options:
+Types options:
 
 - Service token (workspace server-to-server)
 - OAuth 2.0 (act on behalf of users)
