@@ -6,34 +6,62 @@ import {
 	NotFoundException
 } from '@nestjs/common';
 import {PrismaService} from "../prisma/prisma.service.js";
-import {Prisma, privilage} from "../generated/prisma/client.js";
+import {Prisma, PrivilageEnum, ChatEnum} from "../generated/prisma/client.js";
 import {SocketGateway} from "../socket/socket.gateway.js";
 
 @Injectable()
 export class ChatsService {
 	constructor(private readonly conn: PrismaService, private readonly gateway: SocketGateway) {}
 
-	async handleMessage(userId: bigint, chatId: bigint, username: string, message: string) {
-		const isApart = await this.conn.chat_user.findFirst({
-			where: { user_id: userId, chat_id: chatId },
-		})
-		if (!isApart) {
-			throw new ForbiddenException("User not apart of chat");
-		}
-		await this.conn.chat_message.create({
-			data: {user_id: userId, chat_id: chatId, msg: message},
-		}).catch((err) => {
-			if (err instanceof Prisma.PrismaClientKnownRequestError) {
-				if (err.code === "P2003") {
-					throw new BadRequestException("Invalid chat ID");
+	async handleMessage(userId: bigint, targetType: ChatEnum, targetId: bigint, username: string, message: string) {
+		let chatId = targetId;
+		if (targetType === "DIRECT") {
+			const lowerUserId = userId < targetId ? userId : targetId;
+			const biggerUserId = userId > targetId ? userId : targetId;
+			const chat = await this.conn.chat.findFirst({
+				where: {
+					dm_key: `${lowerUserId}:${biggerUserId}`
 				}
+			})
+			let id = chat?.id;
+			if (!id) {
+				const res = await this.conn.chat.create({
+					data: {type: "DIRECT", dm_key: `${lowerUserId}:${biggerUserId}`,}
+				})
+				await this.conn.chat_user.createMany({
+					data: [
+						{user_id: lowerUserId, privilage: "USER", chat_id: res.id},
+						{user_id: biggerUserId, privilage: "USER", chat_id: res.id}
+					]
+				})
+				id = res.id;
 			}
-		})
+			chatId = id;
+			await this.conn.chat_message.create({
+				data: {user_id: userId, msg: message, chat_id: id}
+			})
+		} else if (targetType === "GROUP") {
+			const isApart = await this.conn.chat_user.findFirst({
+				where: { user_id: userId, chat_id: targetId },
+			})
+			if (!isApart) {
+				throw new ForbiddenException("User not apart of chat");
+			}
+			await this.conn.chat_message.create({
+				data: {user_id: userId, chat_id: targetId, msg: message},
+			}).catch((err) => {
+				if (err instanceof Prisma.PrismaClientKnownRequestError) {
+					if (err.code === "P2003") {
+						throw new BadRequestException("Invalid chat ID");
+					}
+				}
+			})
+		}
 		const users = await this.conn.chat_user.findMany({
 			where: { chat_id: chatId },
 			select: { user_id: true, chat_user_user_reference: true }
 		})
-		let roomIds = this.usersRowToEmitField(users);
+		let roomIds = this.usersRowToEmitField(users); // USERID FILTRING WEBSOCKETS
 		this.gateway.emitMessageToRoom(roomIds, "chats:messages:sent", {chatId: chatId.toString(), senderName: username, userId: userId.toString(), message});
 		return;
 	}
@@ -130,7 +158,7 @@ export class ChatsService {
 	}
 
 	async createChat(userId: bigint) {
-		const createChat = await this.conn.chat.create({});
+		const createChat = await this.conn.chat.create({data: {type: "GROUP"}});
 		await this.conn.chat_user.create({data: {user_id: userId, chat_id: createChat.id, privilage: "OWNER"}});
 		return;
 	}
@@ -228,7 +256,7 @@ export class ChatsService {
 		}
 	}
 
-	async updateMember(userId: bigint, chatId: bigint, newRole: privilage) {
+	async updateMember(userId: bigint, chatId: bigint, newRole: PrivilageEnum) {
 		try {
 			await this.conn.chat_user.update({
 				where: { user_id_chat_id: { user_id: userId, chat_id: chatId }, },

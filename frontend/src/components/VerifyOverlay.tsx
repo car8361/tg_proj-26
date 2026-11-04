@@ -21,16 +21,18 @@ function VerifyOverlay() {
 			console.log("KEYBOARD EVENT: ", e);
 			let tempCode = code;
 			if (allowedKeys.includes(e.key)) {
-				document.getElementById(`input:${target}`)!.innerHTML = e.key;
 				tempCode = code.with(target, Number(e.key));
 				setCode(tempCode);
 				console.log(tempCode);
 				if (target < 5) {
+					document.getElementById(`input:${target}`)!.focus();
 					return setTarget(target + 1);
 				}
 			}
 			if (e.key === "Backspace") {
-				document.getElementById(`input:${target-1}`)!.innerHTML = "";
+				const chosenInp = document.getElementById(`input:${target-1}`);
+				chosenInp!.innerHTML = "";
+				chosenInp!.focus();
 				if (target > 0) {return setTarget(target - 1);}
 			}
 			console.log(`LOG2: ${tempCode}`);
@@ -43,6 +45,7 @@ function VerifyOverlay() {
 				if (result.status === 409) {
 					document.removeEventListener("keydown", keyListener);
 					MutLogout.mutate();
+					location.reload();
 				} else if (result.status === 401) {
 					document.removeEventListener("keydown", keyListener);
 					location.reload();
@@ -64,7 +67,7 @@ function VerifyOverlay() {
 					<h1 className="text-white text-2xl text-center pb-10">Verify your verification code</h1>
 					<div className="flex flex-row justify-center gap-4">
 						{Array.from({length: 6}, (_, i) => (
-							<div id={`input:${i}`} onClick={() => {setTarget(i); console.log(i);}} className={i === target ? "w-40 cursor-pointer aspect-square bg-gray-400 text-9xl text-center border-blue-500 rounded-2xl" : "w-40 cursor-pointer aspect-square bg-white text-9xl text-center border-blue-500 rounded-2xl"}></div>
+							<input maxLength={1} id={`input:${i}`} onClick={() => {setTarget(i); console.log(i);}} className={"w-40 cursor-pointer aspect-square bg-white text-9xl text-center border-blue-500 rounded-2xl"}></input>
 						))}
 					</div>
 				</div>

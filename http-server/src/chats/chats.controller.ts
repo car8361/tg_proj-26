@@ -20,16 +20,16 @@ import type { Response, Request } from "express";
 export class ChatsController {
   constructor(private readonly chatsService: ChatsService) {}
 
-  @Post("/:chatId/messages")
+  @Post("/messages") //CHANGED - chatId removed from params, old enpoint: "/:chatId/messages"
   @HttpCode(201)
   async postMessage(
       @Body() body: MessageDto,
-      @Param("chatId", ParseBigintPipe) chatId: bigint,
       @SessionUserId() userId: bigint,
       @SessionUsername() username: string
   ) {
-    await this.chatsService.handleMessage(userId, chatId, username, body.message);
-    return {success: true};
+    const { message, targetType, targetId } = body;
+    await this.chatsService.handleMessage(userId, targetType, targetId, username, message);
+    return {success: true, created: true};
   }
 
   @Delete("/messages/:messageId")

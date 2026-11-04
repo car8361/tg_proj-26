@@ -10,6 +10,8 @@ import { SocketModule } from './socket/socket.module.js';
 import {UserIdThrottlerGuard} from "./common/extensions/throttler.extension.js";
 import { ThrottlerModule } from "@nestjs/throttler";
 import {APP_GUARD} from "@nestjs/core";
+import { MeModule } from './me/me.module.js';
+import { ObjectModule } from './object/object.module.js';
 
 @Module({
   imports: [AuthModule, PrismaModule, MailerModule, UsersModule, ChatsModule, RelationsModule, ReportsModule, SocketModule, ThrottlerModule.forRoot({
@@ -19,7 +21,7 @@ import {APP_GUARD} from "@nestjs/core";
         limit: 25
       }
     ],
-  })],
+  }), MeModule, ObjectModule],
   controllers: [],
   providers: [{provide: APP_GUARD, useClass: UserIdThrottlerGuard}],
 })

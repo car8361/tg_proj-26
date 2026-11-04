@@ -327,17 +327,17 @@ export const useQueryChatMessages = (chatId: string | undefined) => useQuery({
 })
 
 export const useMutationSendMessage = () => useMutation({
-	mutationFn: async ({chatId, message} : {chatId: string, message: string}) => {
-		const res = await fetch(`/api/chats/${chatId}/messages`, {
+	mutationFn: async ({targetId, targetType, message} : {targetId: string, targetType: string, message: string}) => {
+		const res = await fetch(`/api/chats/messages`, {
 			method: "POST",
 			credentials: "include",
 			headers: {"Content-Type": "application/json"},
-			body: JSON.stringify({message})
+			body: JSON.stringify({targetId, targetType, message})
 		})
 		return res.json();
 	},
-	onSuccess: (res, {chatId}) => {
-		queryClient.invalidateQueries({queryKey: ["chat_messages", chatId]});
+	onSuccess: (res, {targetId, targetType}) => {
+		queryClient.invalidateQueries({queryKey: ["chat_messages", targetType, targetId]});
 		location.reload()
 	}
 })

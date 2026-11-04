@@ -1,6 +1,6 @@
 import { IsId } from "../../common/decorators/is-id/is-id.decorator.js"
 import {IsEnum, IsNotEmpty, IsString, Length} from "class-validator";
-import { privilage } from "../../generated/prisma/enums.js";
+import { PrivilageEnum, ChatEnum } from "../../generated/prisma/enums.js";
 
 /**
  * Přijímá:
@@ -14,6 +14,10 @@ export class MessageDto {
 	@IsNotEmpty()
 	@Length(1, 500)
 	message: string;
+	@IsEnum(ChatEnum)
+	targetType: ChatEnum;
+	@IsId()
+	targetId: bigint;
 }
 
 /**
@@ -61,8 +65,8 @@ export class UpdateMemberDto {
 	@IsId()
 	userId: bigint;
 
-	@IsEnum(privilage)
-	newRole: privilage;
+	@IsEnum(PrivilageEnum)
+	newRole: PrivilageEnum;
 }
 
 export class DeleteMemberDto {
