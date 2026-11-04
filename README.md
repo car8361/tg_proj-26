@@ -18,7 +18,13 @@
 - **chats** - chats, messages, adding people to chats..
 - **auth** - login, register..
 
-**LATEST: Terra week 1**
+**LATEST Terra week 2**
+- Fixed (if not most) all backend bigint parsing errors
+- You can send messages from frontend
+- Connected websockets (not all and not tested), though since you cannot add members to a chat right now it's not really testable
+- Overall frontend and backend work, almost no changes in the db
+
+Terra week 1
 - Code cleanups
 - Debugging
 - Better understanding of how to use React hooks
