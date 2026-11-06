@@ -6,7 +6,7 @@ import {
   PatchMessagesDto,
   UpdateChatDto,
   CreateMemberDto,
-  UpdateMemberDto, DeleteMemberDto
+  UpdateMemberDto, DeleteMemberDto, CreateChatDto
 } from "./dto/chat.dto.js";
 import {IsChatPrivilage, IsHigherPriority, IsMessageOwner, Roles} from "./chats.guard.js";
 import {SessionVerified} from "../auth/auth.guard.js";
@@ -20,15 +20,16 @@ import type { Response, Request } from "express";
 export class ChatsController {
   constructor(private readonly chatsService: ChatsService) {}
 
-  @Post("/messages") //CHANGED - chatId removed from params, old enpoint: "/:chatId/messages"
+  @Post("/:chatId/messages") //CHANGED - chatId removed from params, old enpoint: "/:chatId/messages"
   @HttpCode(201)
   async postMessage(
       @Body() body: MessageDto,
+      @Param("chatId", ParseBigintPipe) chatId: bigint,
       @SessionUserId() userId: bigint,
       @SessionUsername() username: string
   ) {
-    const { message, targetType, targetId } = body;
-    await this.chatsService.handleMessage(userId, targetType, targetId, username, message);
+    const { message } = body;
+    await this.chatsService.handleMessage(userId, chatId, username, message);
     return {success: true, created: true};
   }
 
@@ -58,7 +59,9 @@ export class ChatsController {
   @Get("/:chatId/messages")
   @HttpCode(200)
   async getMessages(@Param('chatId', ParseBigintPipe) chatId: bigint) {
+    console.log('chatId', chatId);
     const messages = await this.chatsService.getMessages(chatId);
+    console.log("SENDING MESSAGES: ", messages);
     return {success: true, messages};
   }
 
@@ -115,8 +118,8 @@ export class ChatsController {
 
   @Post("/")
   @HttpCode(200)
-  async createChat(@SessionUserId() userId: bigint, @Res() res: Response) {
-    await this.chatsService.createChat(userId);
+  async createChat(@SessionUserId() userId: bigint, @Body() body: CreateChatDto, @Res() res: Response) {
+    await this.chatsService.createChat(userId, body.chatType, body.targetId);
     return res.status(200).json({success: true});
   }
 

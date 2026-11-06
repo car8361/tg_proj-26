@@ -4,7 +4,10 @@ import multer from "multer";
 
 @Injectable()
 export class ObjectService {
-	constructor(private readonly r2Client: S3Client, private readonly storage: multer.StorageEngine, private readonly upload: multer.Multer) {
+	private r2Client: S3Client;
+	private readonly storage: multer.StorageEngine;
+	private upload: multer.Multer;
+	constructor() {
 		const api = process.env.S3_API;
 		const token = process.env.S3_API_TOKEN;
 		const accessKeyId = process.env.S3_ACCESS_KEY_ID;

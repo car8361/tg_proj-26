@@ -1,9 +1,8 @@
 import {CanActivate, ExecutionContext, Injectable} from "@nestjs/common";
 import {PrismaService} from "../prisma/prisma.service.js";
 import {Reflector} from "@nestjs/core";
-import { privilage } from "../generated/prisma/enums.js";
+import { PrivilageEnum } from "../generated/prisma/enums.js";
 import { Request } from "express";
-import session from "express-session";
 
 /**
  * Pustí request dál pokud je vlastník zprávy
@@ -73,7 +72,7 @@ export class IsChatPrivilage implements CanActivate {
 	}
 }**/
 
-export const Roles = Reflector.createDecorator<privilage[]>();
+export const Roles = Reflector.createDecorator<PrivilageEnum[]>();
 
 /**
  * **Očekává:**

@@ -1,6 +1,15 @@
 import { IsId } from "../../common/decorators/is-id/is-id.decorator.js"
-import {IsEnum, IsNotEmpty, IsString, Length} from "class-validator";
+import {IsEnum, IsNotEmpty, IsString, Length, IsOptional} from "class-validator";
 import { PrivilageEnum, ChatEnum } from "../../generated/prisma/enums.js";
+
+
+export class CreateChatDto {
+	@IsEnum(ChatEnum)
+	chatType: ChatEnum;
+	@IsId()
+	@IsOptional()
+	targetId: bigint;
+}
 
 /**
  * Přijímá:
@@ -14,10 +23,6 @@ export class MessageDto {
 	@IsNotEmpty()
 	@Length(1, 500)
 	message: string;
-	@IsEnum(ChatEnum)
-	targetType: ChatEnum;
-	@IsId()
-	targetId: bigint;
 }
 
 /**
