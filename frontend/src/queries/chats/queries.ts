@@ -1,5 +1,6 @@
 import {useMutation, useQuery, useSuspenseQuery} from "@tanstack/react-query";
-import type {GetChat, GetChatMembers, GetChatMessages, GetChats, GetMessages, ChatType} from "../../types/types.ts";
+import type {GetChat, GetChatMembers, GetChatMessages, GetChats, GetMessages} from "../../types/types.ts";
+import { ChatType } from "../utils.ts";
 import { statusWithMessage } from "../utils.ts";
 import {queryClient} from "../../queryClient.ts";
 
@@ -32,10 +33,12 @@ export const useQueryMessages = (chatId: string) => useSuspenseQuery<GetMessages
 })
 
 export const useMutationChat = () => useMutation({
-	mutationFn: async () => {
+	mutationFn: async ({chatType, targetId} : {chatType: ChatType, targetId?: string}) => {
 		const res = await fetch("/api/chats", {
 			method: "POST",
 			credentials: "include",
+			headers: {"Content-Type": "application/json"},
+			body: JSON.stringify({chatType, targetId}),
 		})
 		if (!res.ok) {
 			throw new Error(statusWithMessage[res.status] ?? "Failed to fetch data");
@@ -69,7 +72,7 @@ export const useMutationDeleteChat = () => useMutation({
 	}
 })
 
-export const useQueryChatMembers = (chatId: string | undefined) => useQuery({
+export const useQueryChatMembers = (chatId: string | null) => useQuery({
 	queryKey: ["chat_members", chatId],
 	queryFn: async (): Promise<GetChatMembers> => {
 		const res = await fetch(`/api/chats/${chatId}/members`, {
@@ -81,10 +84,10 @@ export const useQueryChatMembers = (chatId: string | undefined) => useQuery({
 		}
 		return res.json();
 	},
-	enabled: chatId !== undefined,
+	enabled: chatId !== null,
 })
 
-export const useQueryChatMessages = (chatId: string | undefined) => useQuery({
+export const useQueryChatMessages = (chatId: string | null) => useQuery({
 	queryKey: ["chat_messages", chatId],
 	queryFn: async (): Promise<GetChatMessages> => {
 		const res = await fetch(`/api/chats/${chatId}/messages`, {
@@ -94,33 +97,35 @@ export const useQueryChatMessages = (chatId: string | undefined) => useQuery({
 		if (!res.ok) {
 			throw new Error(statusWithMessage[res.status] ?? "Failed to fetch data");
 		}
-		return res.json();
+		const data = res.json()
+		console.log(`UQCM RECV: `, data)
+		return data;
 	},
-	enabled: chatId !== undefined,
+	enabled: chatId !== null,
 })
 
 export const useMutationSendMessage = () => useMutation({
-	mutationFn: async ({targetId, targetType, message} : {targetId: string, targetType: string, message: string}) => {
-		const res = await fetch(`/api/chats/messages`, {
+	mutationFn: async ({chatId, message} : {chatId: string, message: string}) => {
+		const res = await fetch(`/api/chats/${chatId}/messages`, {
 			method: "POST",
 			credentials: "include",
 			headers: {"Content-Type": "application/json"},
-			body: JSON.stringify({targetId, targetType, message})
+			body: JSON.stringify({message})
 		})
 		if (!res.ok) {
 			throw new Error(statusWithMessage[res.status] ?? "Failed to fetch data");
 		}
-		return res.json();
+		return res;
 	},
-	onSuccess: (res, {targetId, targetType}) => {
+	onSuccess: (res, {chatId}) => {
 		if (res.ok) {
-			queryClient.invalidateQueries({queryKey: ["chat_messages", targetType, targetId]});
+			queryClient.invalidateQueries({queryKey: ["chat_messages", chatId]});
 			location.reload()
 		}
 	}
 })
 
-export const useQueryChat = (chatId: string | undefined) => useQuery({
+export const useQueryChat = (chatId: string | null) => useQuery({
 	queryKey: ["chat_details", chatId],
 	queryFn: async (): Promise<GetChat> => {
 		const res = await fetch(`/api/chats/${chatId}`, {
@@ -132,5 +137,5 @@ export const useQueryChat = (chatId: string | undefined) => useQuery({
 		}
 		return res.json();
 	},
-	enabled: chatId !== undefined
+	enabled: chatId !== null
 })

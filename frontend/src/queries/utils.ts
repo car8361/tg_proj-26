@@ -9,3 +9,14 @@ export const statusWithMessage: Record<number, string> = {
 	500: "Internal Server Error",
 	502: "Bad Gateway"
 }
+
+export enum PrivilageEnum {
+	OWNER = "OWNER",
+	ADMIN = "ADMIN",
+	USER = "USER"
+}
+
+export enum ChatType {
+	GROUP = "GROUP",
+	DIRECT = "DIRECT"
+}

@@ -1,5 +1,5 @@
 import {io, Socket} from "socket.io-client";
-import {useSuspenseQueryAuth} from "./queries/utils.ts";
+import {useQueryAuth} from "./queries/auth/queries.ts";
 import {type ReactNode, useEffect} from "react";
 import {queryClient} from "./queryClient.ts";
 
@@ -9,8 +9,8 @@ const socket = io({
 });
 
 function SocketProvider({children}: {children: ReactNode}) {
-	const auth = useSuspenseQueryAuth();
-	const verified = auth.data.verified === "true";
+	const auth = useQueryAuth();
+	const verified = auth.data ? auth.data.verified === "true" ? "true" : "false" : "false";
 
 	useEffect(() => {
 		if (!verified) { return; }

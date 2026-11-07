@@ -8,28 +8,26 @@ import Home from "./routes/Home.tsx";
 import Dashboard from "./routes/Dashboard.tsx";
 import NotFound from "./routes/NotFound.tsx";
 import Footer from "./components/Footer.tsx";
-import Chats from "./routes/Chats.tsx";
+import Chats from "./components/Chats.tsx";
 import Friends from "./routes/Friends.tsx";
-import {useSuspenseQueryAuth} from "./queries/utils.ts";
+import {useQueryAuth} from "./queries/auth/queries.ts";
 import AppPanel from "./components/AppPanel.tsx";
 
 function App() {
-	const { data } = useSuspenseQueryAuth();
+	const { data } = useQueryAuth();
 	console.log("Types data: ", data);
-	const showVerifyOverlay = data.userId && data.verified === "false";
+	const showVerifyOverlay = data && data?.userId && data.verified === "false";
 	return (
-		<div className="flex flex-col min-h-dvh">
+		<div className="flex flex-col min-h-0 h-dvh">
 			<Header />
-			<main className="flex flex-1 flex-col">
+			<main className="flex flex-1 flex-col min-h-0 overflow-y-auto">
 				{ showVerifyOverlay && <VerifyOverlay /> }
 				<Routes>
 					<Route path="" element={<RedirectHome/>}/>
 					<Route path="login" element={<Login/>}/>
 					<Route path="register" element={<Register/>}/>
 					<Route path="home" element={<Home/>}/>
-					<Route path="dashboard" element={<AppPanel><Dashboard/></AppPanel>}/>
-					<Route path="/chats/:chatId?" element={<AppPanel><Chats /></AppPanel>}/>
-					<Route path="friends" element={<AppPanel><Friends /></AppPanel>}/>
+					<Route path="app" element={<AppPanel/>}/>
 					<Route path="*" element={<NotFound />}/>
 				</Routes>
 			</main>

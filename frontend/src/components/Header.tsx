@@ -2,7 +2,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import {useState} from "react";
 import {useNavigate} from "react-router";
 import type { Types } from "../types/types.ts";
-import {useMutationDeleteAccount, useMutationLogout} from "../queries/utils.ts";
+import {useMutationDeleteAccount, useMutationLogout} from "../queries/auth/queries.ts";
 
 function Header() {
 	const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -23,7 +23,7 @@ function Header() {
 				<a href="/home">Home</a>
 				<a href="/api">API - swagger</a>
 				{data.userId && (
-					<a href="/dashboard">Dashboard</a>
+					<a href="/app">App</a>
 				)}
 			</nav>
 			<p className="cursor-pointer" onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}>Logged in as: {data?.username ?? "Guest"}</p>

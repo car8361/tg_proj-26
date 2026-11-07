@@ -1,7 +1,5 @@
 import {useEffect, useState} from "react";
-import { useMutationLogout, useSuspenseQueryAuth} from "../queries/utils.ts";
-import { useMutation2fa } from "../queries/utils.ts";
-import {useNavigate} from "react-router";
+import { useMutationLogout, useQueryAuth, useMutation2fa } from "../queries/auth/queries.ts";
 import {queryClient} from "../queryClient.ts";
 
 
@@ -13,7 +11,7 @@ function VerifyOverlay() {
 	const Mut2Fa = useMutation2fa();
 	const MutLogout = useMutationLogout();
 
-	const { data } = useSuspenseQueryAuth();
+	const { data } = useQueryAuth();
 
 	useEffect(() => {
 		async function keyListener(e: KeyboardEvent) {
@@ -61,7 +59,7 @@ function VerifyOverlay() {
 	}, [target])
 
 	return (
-		(data.userId && data.verified === "false") ? (
+		(data && data.userId && data.verified === "false") ? (
 			<div id="verify-overlay-div" className="fixed flex flex-col justify-center align-center bg-black w-full h-full z-10">
 				<div>
 					<h1 className="text-white text-2xl text-center pb-10">Verify your verification code</h1>

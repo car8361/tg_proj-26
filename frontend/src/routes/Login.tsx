@@ -1,6 +1,6 @@
 import Input from "../components/authInput";
 import { LoginZod } from "../types/types.ts";
-import {useMutationLogin} from "../queries/utils.ts";
+import {useMutationLogin} from "../queries/auth/queries.ts";
 import {useState} from "react";
 
 function Login() {

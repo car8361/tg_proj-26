@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import Input from "../components/authInput";
-import {useMutationRegister} from "../queries/utils.ts";
+import {useMutationRegister} from "../queries/auth/queries.ts";
 import { RegisterZod } from "../types/types.ts";
 
 function Login() {
