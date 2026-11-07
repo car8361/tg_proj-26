@@ -9,7 +9,7 @@ import Dashboard from "./routes/Dashboard.tsx";
 import NotFound from "./routes/NotFound.tsx";
 import Footer from "./components/Footer.tsx";
 import Chats from "./components/Chats.tsx";
-import Friends from "./routes/Friends.tsx";
+import Friends from "./components/Friends.tsx";
 import {useQueryAuth} from "./queries/auth/queries.ts";
 import AppPanel from "./components/AppPanel.tsx";
 

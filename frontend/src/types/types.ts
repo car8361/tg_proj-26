@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type {PrivilageEnum} from "../queries/utils.ts";
 
 export interface Login {
 	identifier: string;
@@ -116,7 +117,7 @@ export interface GetChatMembers {
 	}[]
 }
 
-export enum ChatType {
-	DIRECT,
-	GROUP
+export interface GetChatPrivilage {
+	success: boolean;
+	privelage: PrivilageEnum;
 }

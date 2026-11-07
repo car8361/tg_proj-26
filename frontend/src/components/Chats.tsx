@@ -2,16 +2,25 @@ import {
 	useQueryChatMembers,
 	useQueryChatMessages,
 	useMutationSendMessage,
-	useQueryChat
+	useQueryChat, useQueryChatUserPrivilages, useMutationAddMember, useQueryAddChatMember
 } from "../queries/chats/queries.ts";
 
-import {UsersRound} from "lucide-react";
+import {UsersRound, Plus} from "lucide-react";
+import FixedContainer from "./FixedContainer.tsx";
+import {useState} from "react";
+import {queryClient} from "../queryClient.ts";
+import {useQueryFriends} from "../queries/relations/queries.ts";
 
 function Chats({chatId} : {chatId: string}) {
+	const [membersOpen, setMembersOpen] = useState(false);
+
 	const chatData = useQueryChat(chatId);
 	const chatMembers = useQueryChatMembers(chatId);
 	const chatMessages = useQueryChatMessages(chatId);
 	const sendMessageMut = useMutationSendMessage();
+	const userChatPrivelages = useQueryChatUserPrivilages(chatId);
+	const addChatMember = useMutationAddMember();
+	const userFriends = useQueryFriends();
 
 	return (
 		<div className={"flex flex-1 flex-row"}>
@@ -23,9 +32,23 @@ function Chats({chatId} : {chatId: string}) {
 						<div className="bg-white grid grid-cols-[6fr_1fr] grid-rows-[19fr_1fr]">
 							<div className=" col-[2] bg-gray-100  row-span-full flex flex-col">
 								<div className={"flex flex-row justify-center p-2 items-center border-b"}>
-									<UsersRound />
-									<h2 className={"text-2xl"}>Members</h2>
+									<div className={"flex flex-row justify-center p-2 items-center mr-auto"}>
+										<UsersRound />
+										<h2 className={"text-2xl"}>Members</h2>
+									</div>
+									<Plus width="40" height="40" className="cursor-pointer" onClick={() => (setMembersOpen(true))} />
 								</div>
+								{membersOpen && (<div className="fixed left-[50%] top-[50%] translate-[-50%] border border-black rounded-2xl bg-white w-[20dvw] h-[40dvh] overflow-y-scroll">
+									<p className="p-6 text-2xl border-b w-[80%] text-center m-auto">Add a friend to your chat!</p>
+									<div>
+										{userFriends.data && userFriends.data.friends.map(f => {
+											if (chatMembers.data && chatMembers.data.members.find(m => m.username === f.other_username)) {
+												return (<button>{f.other_username}</button>)
+											}
+											return <button>{f.other_username}</button>
+										})}
+									</div>
+								</div>)}
 								<div className={"bg-gray-100"}>
 									{chatMembers.data?.members && chatMembers.data?.members.map((m, i) => (
 										<div>{m.username}</div>

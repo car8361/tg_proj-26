@@ -164,7 +164,7 @@ export class ChatsService {
 		try {
 			const res = await this.conn.chat_user.findFirstOrThrow({
 				where: {user_id: userId, chat_id: chatId},
-				select: {chat_user_chat_reference: {select: {chat_name: true, id: true}}}
+				select: {chat_user_chat_reference: {select: {chat_name: true, id: true, type: true}}}
 			});
 			return {
 				chat_name: res?.chat_user_chat_reference.chat_name,
@@ -240,6 +240,9 @@ export class ChatsService {
 				if (err.code === "P2002") {
 					throw new ConflictException("User already in chat");
 				}
+				if (err.code === "P2025") {
+					throw new ConflictException("Chat or user not found");
+				}
 			}
 			throw err;
 		}
@@ -286,6 +289,20 @@ export class ChatsService {
 			}
 			throw err;
 		}
+	}
+
+	async getChatUserPrivilages(userId: bigint, chatId: bigint) {
+		const result = await this.conn.chat_user.findFirstOrThrow({
+			where: { chat_id: chatId, user_id: userId },
+			select: { privilage: true }
+		}).catch((e) => {
+			if (e instanceof Prisma.PrismaClientKnownRequestError) {
+				if (e.code === "P2025") {
+					throw new NotFoundException("User not found");
+				}
+			}
+		})
+		return result!.privilage;
 	}
 
 	private usersRowToEmitField(rowsUserIds: { user_id: bigint }[]) {

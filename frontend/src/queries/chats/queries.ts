@@ -1,5 +1,12 @@
 import {useMutation, useQuery, useSuspenseQuery} from "@tanstack/react-query";
-import type {GetChat, GetChatMembers, GetChatMessages, GetChats, GetMessages} from "../../types/types.ts";
+import type {
+	GetChat,
+	GetChatMembers,
+	GetChatMessages,
+	 GetChatPrivilage,
+	GetChats,
+	GetMessages
+} from "../../types/types.ts";
 import { ChatType } from "../utils.ts";
 import { statusWithMessage } from "../utils.ts";
 import {queryClient} from "../../queryClient.ts";
@@ -138,4 +145,47 @@ export const useQueryChat = (chatId: string | null) => useQuery({
 		return res.json();
 	},
 	enabled: chatId !== null
+})
+
+export const useQueryChatUserPrivilages = (chatId: string | null) => useQuery({
+	queryKey: ["chat_privelages", chatId],
+	queryFn: async (): Promise<GetChatPrivilage> => {
+		const res = await fetch(`/api/chats/${chatId}/privilages`, {
+			method: "GET",
+			credentials: "include",
+		})
+		if (!res.ok) {
+			throw new Error(statusWithMessage[res.status] ?? "Failed to fetch data");
+		}
+		return res.json();
+	},
+	enabled: chatId !== null,
+})
+
+export const useMutationAddMember = () => useMutation({
+	mutationFn: async ({chatId, targetId} : {chatId: string, targetId: string}) => {
+		const res = await fetch(`/api/chats/${chatId}/members`, {
+			method: "POST",
+			headers: {"Content-Type": "application/json"},
+			body: JSON.stringify({targetId})
+		})
+		if (!res.ok) {
+			throw new Error(statusWithMessage[res.status] ?? "Failed to fetch data");
+		}
+		return res;
+	}
+})
+
+export const useQueryAddChatMember = (chatId: string) => useQuery({
+	queryKey: ["add_member", chatId],
+	queryFn: async (): Promise<GetChatMembers> => {
+		const res = await fetch(`/api/chats/:chatId/addable-members`, {
+			method: "GET",
+			credentials: "include",
+		})
+		if (!res.ok) {
+			throw new Error(statusWithMessage[res.status] ?? "Failed to fetch data");
+		}
+		return res.json();
+	}
 })

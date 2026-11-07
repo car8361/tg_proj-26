@@ -1,8 +1,9 @@
-import {CanActivate, ExecutionContext, Injectable} from "@nestjs/common";
+import {BadRequestException, CanActivate, ExecutionContext, Injectable, NotFoundException} from "@nestjs/common";
 import {PrismaService} from "../prisma/prisma.service.js";
 import {Reflector} from "@nestjs/core";
-import { PrivilageEnum } from "../generated/prisma/enums.js";
+import {ChatEnum, PrivilageEnum} from "../generated/prisma/enums.js";
 import { Request } from "express";
+import {PrismaClientKnownRequestError} from "@prisma/client/runtime/client";
 
 /**
  * Pustí request dál pokud je vlastník zprávy
@@ -136,6 +137,37 @@ export class IsHigherPriority implements CanActivate {
 		const RequestorIndex = users[0].user_id === userId ? 0 : 1;
 		const OtherIndex = users[0].user_id === targetId ? 0 : 1
 		if (users[RequestorIndex].privilage <= users[OtherIndex].privilage) {
+			return false;
+		}
+		return true;
+	}
+}
+
+export const ChatTypes = Reflector.createDecorator<ChatEnum[]>();
+
+@Injectable()
+export class IsChatType implements CanActivate {
+	constructor(private readonly conn: PrismaService, private reflector: Reflector) {}
+
+	async canActivate(context: ExecutionContext) {
+		const req = context.switchToHttp().getRequest();
+		const allowed = this.reflector.get(ChatTypes, context.getHandler());
+		const chatId = req.params.chatId;
+		if (!chatId) {
+			throw new BadRequestException("Missing chat id");
+		}
+		const chat = await this.conn.chat.findFirstOrThrow({
+			where: {id: chatId},
+			select: {type: true},
+		}).catch(e => {
+			if (e instanceof PrismaClientKnownRequestError) {
+				if (e.code === "P2025") {
+					throw new NotFoundException("Chat not found");
+				}
+			}
+			throw e;
+		})
+		if (!allowed.find(x => x === chat.type)) {
 			return false;
 		}
 		return true;

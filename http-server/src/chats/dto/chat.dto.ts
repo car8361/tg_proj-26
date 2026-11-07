@@ -63,7 +63,7 @@ export class UpdateChatDto {
 
 export class CreateMemberDto {
 	@IsId()
-	userId: bigint;
+	targetId: bigint;
 }
 
 export class UpdateMemberDto {

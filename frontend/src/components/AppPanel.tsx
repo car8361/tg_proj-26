@@ -6,6 +6,7 @@ import {Plus, UsersRound, X, MessagesCircle} from "lucide-react";
 import {ChatType} from "../queries/utils.ts";
 import {useMutationChat, useMutationDeleteChat, useQueryChats} from "../queries/chats/queries.ts";
 import Chats from "./Chats.tsx";
+import Friends from "./Friends.tsx"
 
 function AppPanel({children} : { children?: ReactNode }) {
 	const navigate = useNavigate();
@@ -36,6 +37,7 @@ function AppPanel({children} : { children?: ReactNode }) {
 						className={"cursor-pointer flex flex-row text-2xl p-2 w-full justify-left"}
 						onMouseEnter={(e) => {e.currentTarget.style.backgroundColor = "#F2F2ED"}}
 						onMouseLeave={(e) => {e.currentTarget.style.backgroundColor = "transparent"}}
+						onClick={() => navigate("/app")}
 					>
 						<UsersRound />
 						Friends
@@ -70,8 +72,10 @@ function AppPanel({children} : { children?: ReactNode }) {
 					}
 				</div>
 			</div>
-			{chatId && (
+			{chatId ? (
 				<Chats chatId={chatId} />
+			) : (
+				<Friends />
 			)}
 		</div>
 	)

@@ -75,12 +75,12 @@ export class ChatsController {
   }
 
   @Post("/:chatId/members")
-  @UseGuards(IsChatPrivilage)
   @Roles(["OWNER", "ADMIN"])
+  @UseGuards(IsChatPrivilage)
   @HttpCode(201)
   async addMember(@Body() body: CreateMemberDto, @Param('chatId', ParseBigintPipe) chatId: bigint) {
-    const { userId } = body;
-    await this.chatsService.createMember(userId, chatId);
+    const { targetId } = body;
+    await this.chatsService.createMember(targetId, chatId);
     return {success: true};
   }
 
@@ -100,6 +100,11 @@ export class ChatsController {
     const { targetId } = body;
     await this.chatsService.deleteMember(targetId, chatId);
     return {success: true};
+  }
+
+  @Delete("/:chaatId/members/leave")
+  async leaveChat(@Param('chatId', ParseBigintPipe) chatId: bigint, @SessionUserId() userId: bigint) {
+
   }
 
   @Get("/")
@@ -140,5 +145,12 @@ export class ChatsController {
   async deleteChat(@Param('chatId', ParseBigintPipe) chatId: bigint) {
     await this.chatsService.deleteChat(chatId);
     return {success: true};
+  }
+
+  @Get("/:chatId/privilages")
+  @HttpCode(200)
+  async getUserPrivilages(@SessionUserId() userId: bigint, @Param('chatId', ParseBigintPipe) chatId: bigint) {
+    const privilage = await this.chatsService.getChatUserPrivilages(userId, chatId);
+    return {success: true, privilage};
   }
 }
