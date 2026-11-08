@@ -223,10 +223,19 @@ export class ChatsService {
 		return userRows.map(r => ({id: r.chat_user_user_reference.id.toString(), username: r.chat_user_user_reference.username, privilage: r.privilage}));
 	}
 
-	async createMember(userId: bigint, chatId: bigint) {
+	async createMembers(userId: bigint, targetIds: bigint[], chatId: bigint) {
 		try {
-			await this.conn.chat_user.create({
-				data: { chat_id: chatId, user_id: userId, privilage: "USER" }
+			const friendIds = await this.conn.relation.findMany({
+				where: { owner_id: userId, other_id: { in: targetIds}, relationship: "FRIEND"},
+				select: { other_id: true }
+			})
+			targetIds.map(tid => {
+				if (!friendIds.find(fid => fid.other_id === tid)) {
+					throw new NotFoundException("Invalid target IDs");
+				}
+			})
+			await this.conn.chat_user.createMany({
+				data: targetIds.map(id => ({ chat_id: chatId, user_id: id, privilage: "USER" }))
 			})
 			const users = await this.conn.chat_user.findMany({
 				where: { chat_id: chatId },

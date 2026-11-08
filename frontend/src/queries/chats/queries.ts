@@ -162,17 +162,20 @@ export const useQueryChatUserPrivilages = (chatId: string | null) => useQuery({
 	enabled: chatId !== null,
 })
 
-export const useMutationAddMember = () => useMutation({
-	mutationFn: async ({chatId, targetId} : {chatId: string, targetId: string}) => {
+export const useMutationAddMembers = () => useMutation({
+	mutationFn: async ({chatId, targetIds} : {chatId: string, targetIds: string[]}) => {
 		const res = await fetch(`/api/chats/${chatId}/members`, {
 			method: "POST",
 			headers: {"Content-Type": "application/json"},
-			body: JSON.stringify({targetId})
+			body: JSON.stringify({targetIds})
 		})
 		if (!res.ok) {
 			throw new Error(statusWithMessage[res.status] ?? "Failed to fetch data");
 		}
 		return res;
+	},
+	onSuccess: (res) => {
+		location.reload()
 	}
 })
 

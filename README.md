@@ -6,9 +6,7 @@
   *setup with: docker compose + dockerfile + nginx*
 
 **Frontend routes**:
-- **/chats** - chats
-- **/dashboard** - menu after logging in
-- **/friends** - friends
+- **/app** - reworked these routes into 1: - **/chats** **/dashboard** **/friends**
 - **/home** - homepage
 - **/login** - login
 - **/register** - register
@@ -18,7 +16,13 @@
 - **chats** - chats, messages, adding people to chats..
 - **auth** - login, register..
 
-**LATEST Terra week 2**
+**LATEST Terra week 3**
+- Reworked frontend UI
+- Reworked some backend chat logic (sadly DMs will be next week)
+- Started researching about presigned URLs (will have to rewrite slightly object service)
+- Fixed bugs
+
+Terra week 2
 - Fixed (if not most) all backend bigint parsing errors
 - You can send messages from frontend
 - Connected websockets (not all and not tested), though since you cannot add members to a chat right now it's not really testable

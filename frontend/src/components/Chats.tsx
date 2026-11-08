@@ -2,14 +2,13 @@ import {
 	useQueryChatMembers,
 	useQueryChatMessages,
 	useMutationSendMessage,
-	useQueryChat, useQueryChatUserPrivilages, useMutationAddMember, useQueryAddChatMember, useMutationUpdChat
+	useQueryChat, useQueryChatUserPrivilages, useMutationAddMembers, useMutationUpdChat
 } from "../queries/chats/queries.ts";
 
-import {UsersRound, Plus, Pencil} from "lucide-react";
-import FixedContainer from "./FixedContainer.tsx";
-import {useState} from "react";
-import {queryClient} from "../queryClient.ts";
+import {UsersRound, Plus, Check, X} from "lucide-react";
+import { useState } from "react";
 import {useQueryFriends} from "../queries/relations/queries.ts";
+import type {GetChat, GetChatMembers, GetFriends} from "../types/types.ts";
 
 function Chats({chatId} : {chatId: string}) {
 	const [membersOpen, setMembersOpen] = useState(false);
@@ -20,7 +19,6 @@ function Chats({chatId} : {chatId: string}) {
 	const chatMessages = useQueryChatMessages(chatId);
 	const sendMessageMut = useMutationSendMessage();
 	const userChatPrivelages = useQueryChatUserPrivilages(chatId);
-	const addChatMember = useMutationAddMember();
 	const userFriends = useQueryFriends();
 	const updChatMut = useMutationUpdChat();
 
@@ -52,17 +50,9 @@ function Chats({chatId} : {chatId: string}) {
 									</div>
 									<Plus width="40" height="40" className="cursor-pointer" onClick={() => (setMembersOpen(true))} />
 								</div>
-								{membersOpen && (<div className="fixed left-[50%] top-[50%] translate-[-50%] border border-black rounded-2xl bg-white w-[20dvw] h-[40dvh] overflow-y-scroll">
-									<p className="p-6 text-2xl border-b w-[80%] text-center m-auto">Add a friend to your chat!</p>
-									<div className="w-[60%] border m-auto text-left">
-										{userFriends.data && userFriends.data.friends.map(f => {
-											if (chatMembers.data && chatMembers.data.members.find(m => m.username === f.other_username)) {
-												return (<button className="">{f.other_username}</button>)
-											}
-											return <button>{f.other_username}</button>
-										})}
-									</div>
-								</div>)}
+								{membersOpen && (
+									<AddMemberDiv chatId={chatData.data!.chat.id} chatMembers={chatMembers.data} userFriends={userFriends.data} setOpen={setMembersOpen} />
+								)}
 								<div className={"bg-gray-100"}>
 									{chatMembers.data?.members && chatMembers.data?.members.map((m, i) => (
 										<div>{m.username}</div>
@@ -94,6 +84,55 @@ function Chats({chatId} : {chatId: string}) {
 						</div>
 					</div>
 			)}
+		</div>
+	)
+}
+
+function AddMemberDiv({chatId, userFriends, chatMembers, setOpen} : {chatId: string, userFriends: GetFriends | undefined, chatMembers: GetChatMembers | undefined, setOpen: React.Dispatch<React.SetStateAction<boolean>>}) {
+	const [addToChatIds, setAddToChatIds] = useState<string[]>([]);
+	const addToChat = useMutationAddMembers();
+
+	return (
+		<div className="fixed left-[50%] top-[50%] translate-[-50%] flex flex-col border border-black rounded-md bg-white w-[20dvw] h-[40dvh] overflow-hidden">
+			<X width="40" height="40" className="absolute top-0 right-0 cursor-pointer" onClick={() => {setOpen(false)}}/>
+			<p className="p-6 text-2xl border-b w-[80%] text-center mx-auto">Add a friend to your chat!</p>
+			<div className="w-[60%] flex-1 overflow-y-scroll mx-auto text-left pt-5">
+				{userFriends && userFriends.friends.map(f => {
+					if (chatMembers && chatMembers.members.find(m => m.username === f.other_username)) {
+						return (<div className="">{f.other_username}<Check className="ml-auto text-black" /></div>)
+					}
+					if (addToChatIds.find(i => i === f.other_id)) {
+						return (
+							<div className="flex flex-row w-full">
+								<p>{f.other_username}</p>
+								<X className="ml-auto cursor-pointer text-black transition-colors hover:text-gray-500"
+								   onClick={() => {
+									   setAddToChatIds(old => old.splice(old.indexOf(f.other_id), 1))
+								   }}
+								/>
+							</div>
+						)
+					}
+					return <div className="flex flex-row w-full">
+						<p>{f.other_username}</p>
+						<Plus className="ml-auto cursor-pointer text-black transition-colors hover:text-gray-500"
+						      onClick={() => {
+								  setAddToChatIds(old => [...old, f.other_id])
+							  }}
+						/>
+					</div>
+				})}
+			</div>
+			<button className={`mt-auto ${addToChatIds.length > 0 ? "bg-blue-500 cursor-pointer" : "bg-blue-400"} w-[98%] rounded-md text-2xl mx-auto mb-1 transition-colors hover:bg-blue-400`}
+				onClick={() => {
+					if (addToChatIds.length === 0) {
+						return;
+					}
+					addToChat.mutate({chatId, targetIds: addToChatIds});
+				}}
+			>
+				<p className="m-auto">Confirm</p>
+			</button>
 		</div>
 	)
 }

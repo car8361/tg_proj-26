@@ -78,9 +78,9 @@ export class ChatsController {
   @Roles(["OWNER", "ADMIN"])
   @UseGuards(IsChatPrivilage)
   @HttpCode(201)
-  async addMember(@Body() body: CreateMemberDto, @Param('chatId', ParseBigintPipe) chatId: bigint) {
-    const { targetId } = body;
-    await this.chatsService.createMember(targetId, chatId);
+  async addMember(@SessionUserId() userId: bigint, @Body() body: CreateMemberDto, @Param('chatId', ParseBigintPipe) chatId: bigint) {
+    const { targetIds } = body;
+    await this.chatsService.createMembers(userId, targetIds, chatId);
     return {success: true};
   }
 

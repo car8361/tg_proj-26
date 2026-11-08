@@ -1,4 +1,4 @@
-import { IsId } from "../../common/decorators/is-id/is-id.decorator.js"
+import {IsId, IsIdArray} from "../../common/decorators/is-id/is-id.decorator.js"
 import {IsEnum, IsNotEmpty, IsString, Length, IsOptional} from "class-validator";
 import { PrivilageEnum, ChatEnum } from "../../generated/prisma/enums.js";
 
@@ -62,8 +62,8 @@ export class UpdateChatDto {
 }
 
 export class CreateMemberDto {
-	@IsId()
-	targetId: bigint;
+	@IsIdArray()
+	targetIds: bigint[];
 }
 
 export class UpdateMemberDto {
