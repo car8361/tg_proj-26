@@ -189,3 +189,18 @@ export const useQueryAddChatMember = (chatId: string) => useQuery({
 		return res.json();
 	}
 })
+
+export const useMutationUpdChat = () => useMutation({
+	mutationFn: async ({chatId, name} : {chatId: string, name: string}) => {
+		const res = await fetch(`/api/chats/${chatId}/`, {
+			method: "PATCH",
+			credentials: "include",
+			headers: {"Content-Type": "application/json"},
+			body: JSON.stringify({name})
+		})
+		if (!res.ok) {
+			throw new Error(statusWithMessage[res.status] ?? "Failed to fetch data");
+		}
+		return res.json();
+	}
+});

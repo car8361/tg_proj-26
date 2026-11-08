@@ -28,9 +28,10 @@ export const useMutationFriendRequest = (setInviteRes: React.Dispatch<SetStateAc
 		})
 		if (!res.ok) {
 			res.status === 409 && setInviteRes("Friend request already sent");
+			res.status === 404 && setInviteRes("User doesn't exist");
 			throw new Error(statusWithMessage[res.status] ?? "Failed to fetch data");
 		}
-		return res.json();
+		return res;
 	},
 	onSuccess: (res) => {
 		if (res.ok) {

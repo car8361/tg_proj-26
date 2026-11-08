@@ -130,7 +130,7 @@ export class ChatsController {
 
   @Patch("/:chatId")
   @UseGuards(IsChatPrivilage)
-  @Roles(["ADMIN"])
+  @Roles(["OWNER", "ADMIN"])
   @HttpCode(204)
   async updateChat(@Body() body: UpdateChatDto, @Param('chatId', ParseBigintPipe) chatId: bigint) {
     let { name } = body;

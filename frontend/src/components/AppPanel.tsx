@@ -60,7 +60,7 @@ function AppPanel({children} : { children?: ReactNode }) {
 								>
 									<p
 										className="m-2 p-2 text-black"
-									>{r.chat_name}</p>
+									>{r.name}</p>
 									{(hoveringChatId !== undefined && hoveringChatId === Number(i)) && (
 										<X className={"text-black cursor-pointer block my-auto ml-auto"} width="40" height="40" onClick={() => { chatDeleteMut.mutate(r.id)}} />
 									)}

@@ -155,19 +155,19 @@ export class ChatsService {
 	async getChats(userId: bigint) {
 		const res = await this.conn.chat_user.findMany({
 			where: { user_id: userId },
-			select: { chat_user_chat_reference: { select: { chat_name: true, id: true }}}
+			select: { chat_user_chat_reference: { select: { name: true, id: true }}}
 		});
-		return res.map((r) => ({chat_name: r.chat_user_chat_reference.chat_name, id: r.chat_user_chat_reference.id.toString()}));
+		return res.map((r) => ({name: r.chat_user_chat_reference.name, id: r.chat_user_chat_reference.id.toString()}));
 	}
 
 	async getChat(userId: bigint, chatId: bigint) {
 		try {
 			const res = await this.conn.chat_user.findFirstOrThrow({
 				where: {user_id: userId, chat_id: chatId},
-				select: {chat_user_chat_reference: {select: {chat_name: true, id: true, type: true}}}
+				select: {chat_user_chat_reference: {select: {name: true, id: true, type: true}}}
 			});
 			return {
-				chat_name: res?.chat_user_chat_reference.chat_name,
+				name: res?.chat_user_chat_reference.name,
 				id: res?.chat_user_chat_reference.id.toString()
 			};
 		} catch (err) {

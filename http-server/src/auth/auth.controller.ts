@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Body, HttpCode, Req, Ip, UseGuards, Res, Query, ConflictException,
-  InternalServerErrorException, Delete, HttpException, HttpStatus, UnauthorizedException
+  InternalServerErrorException, Delete, HttpException, HttpStatus, UnauthorizedException, ForbiddenException
 } from '@nestjs/common';
 import { AuthService } from './auth.service.js';
 import { RegisterDto } from "./dto/register.dto.js";
@@ -75,17 +75,19 @@ export class AuthController {
     console.log(body);
     const { code } = body;
     const verified = await this.authService.verifyCode(code, userId, req.ip ?? "Neznámá IP adresa");
-    if (verified === "LOGOUT") {
+    if (verified === "409") {
       await new Promise((resolve, reject) => {
-        req.session.destroy((err: Error) => { err ? reject(err) : resolve(true) });
+        req.session.destroy((err: Error) => { if (err) { throw err } else { resolve(true) }});
       })
       res.clearCookie(process.env.SESSION_NAME!);
+      throw new ConflictException();
     }
-    if (verified) {
+    if (verified === "403") {
+      throw new ForbiddenException();
+    }
+    if (verified === "200") {
       req.session.verified = true;
       return {ok: true};
-    } else {
-      throw new UnauthorizedException();
     }
   }
 

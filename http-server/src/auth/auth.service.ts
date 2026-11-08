@@ -67,29 +67,28 @@ export class AuthService {
     )
   }
   async verifyCode(code: string, userId: bigint, ip: string): Promise<boolean | string> {
-    const res = await this.conn.email_code.findFirst({
+    const res = await this.conn.email_code.findFirstOrThrow({
       where: { user_id: userId },
     })
     if (!res) {
-      return false;
+      return "409";
     }
     if (new Date() > res.due_until) {
-      console.log("Deleting");
       await this.conn.email_code.deleteMany({
-        where: {id: res.user_id}
+        where: {user_id: res.user_id}
       });
-      return false;
+      return "409";
     }
     if (res.attempts >= 3) {
       try {
-        await this.conn.email_code.delete({
-          where: {id: res.user_id}
+        await this.conn.email_code.deleteMany({
+          where: {user_id: res.user_id}
         });
-        return "LOGOUT";
+        return "409";
       } catch (err) {
         if (err instanceof PrismaClientKnownRequestError) {
           if (err.code === "P2025") {
-            throw new ConflictException("Code does not exist")
+            return "409"
           }
         }
       }
@@ -100,16 +99,16 @@ export class AuthService {
         `Somebody is trying to log into your account from: ${ip}.`,
         `<div>Somebody is trying to log into your account from: ${ip}.<div>`,
       );
-      return false;
+      return "409";
     }
     if (res?.code !== code) {
       await this.conn.email_code.update({
         where: {id: res.id},
         data: { attempts: res.attempts + 1 },
       })
-      return false;
+      return "403";
     }
-    return true;
+    return "200";
   }
   async deleteUser(id: bigint) {
     try {

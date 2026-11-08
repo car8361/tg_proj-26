@@ -48,15 +48,14 @@ export const useMutation2fa = () => useMutation({
 			body: JSON.stringify({code})
 		})
 		if (!res.ok) {
+			if (res.status === 409 || res.status === 403) {
+				await queryClient.invalidateQueries({queryKey: ["auth"]});
+				location.reload()
+			}
 			throw new Error(statusWithMessage[res.status] ?? "Failed to fetch data");
 		}
 		return res;
 	},
-	onSettled: async (res) => {
-		if (res?.status === 409 || res?.status === 403) {
-			await queryClient.invalidateQueries({queryKey: ["auth"]});
-		}
-	}
 })
 
 export const useMutationDeleteAccount = () => useMutation({

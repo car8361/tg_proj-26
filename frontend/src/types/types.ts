@@ -45,14 +45,14 @@ export const AuthZod = z.object({
 
 export interface GetChats {
 	chats: {
-		chat_name: string;
+		name: string;
 		id: string;
 	}[];
 }
 
 export interface GetChat {
 	chat: {
-		chat_name: string;
+		name: string;
 		id: string;
 	};
 }
@@ -119,5 +119,5 @@ export interface GetChatMembers {
 
 export interface GetChatPrivilage {
 	success: boolean;
-	privelage: PrivilageEnum;
+	privilage: PrivilageEnum;
 }
