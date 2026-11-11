@@ -4,9 +4,11 @@ import {
 	useMutationInvitesDelete,
 	useQueryFriends,
 	useQueryOutgoing,
-	useQueryPending
+	useQueryPending,
 } from "../queries/relations/queries.ts";
+import { useMutationChat } from "../queries/chats/queries.ts";
 import {useState} from "react";
+import { ChatType } from "../queries/utils.ts";
 
 import {SendHorizontal, CircleX, CircleCheck} from "lucide-react";
 
@@ -20,6 +22,13 @@ function Friends() {
 	const invitesAccept = useMutationInvitesAccept();
 	const deleteFriend = useMutationDeleteFriend();
 	console.log("FRIENDS: ", data);
+
+	const chat = useMutationChat();
+
+	const gotoDM = (friendId: string) => {
+		chat.mutate({chatType: ChatType.DIRECT, targetId: friendId})
+	}
+
 	return (
 			<div className="flex-1 grid grid-rows-[1fr_19fr] grid-cols-[1fr_1fr_1fr]">
 				<div className="border border-white rounded-bl-2xl bg-gray-100 grid items-center col-span-3">
@@ -54,9 +63,12 @@ function Friends() {
 						<div className="pt-6">
 							{data?.friends.length ?? 0 > 0 ?
 								data?.friends.map((friend) => (
-									<div>
-										<p>{friend.other_username}</p>
-										<button className="cursor-pointer" onClick={() => {console.log("TO MUTATE: ", friend.other_id); deleteFriend.mutate(friend.other_id)}}>Delete friend</button>
+									<div className="flex justify-center">
+										<div className="flex flex-row justify-center items-center gap-4 bg-blue-200 transition-colors hover:bg-blue-400 w-[50%] text-2xl cursor-pointer rounded-xl" onClick={() => gotoDM(friend.other_id)}>
+											<p className="select-none p-2" onClick={() => gotoDM(friend.other_id)}>{friend.other_username}</p>
+											<SendHorizontal className="ml-auto text-black transition-colors duration-300 hover:text-white" onClick={() => gotoDM(friend.other_id)} />
+											<button className="p-2 cursor-pointer text-black transition-colors duration-300  hover:text-white" onClick={() => {console.log("TO MUTATE: ", friend.other_id); deleteFriend.mutate(friend.other_id)}}><CircleX /></button>
+										</div>
 									</div>
 								))
 							 : (

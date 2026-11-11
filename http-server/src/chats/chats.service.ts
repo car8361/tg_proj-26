@@ -134,7 +134,24 @@ export class ChatsService {
 			if (targetId === targetId) {return;}
 			const biggerId = userId > targetId ? userId : targetId;
 			const smallerId = userId < targetId ? userId : targetId;
-			await this.conn.$transaction(async (t) => {
+			await this.conn.relation.findFirstOrThrow({
+				where: { owner_id: userId, other_id: targetId, relationship: "FRIEND" },
+			}).catch((err) => {
+				if (err instanceof Prisma.PrismaClientKnownRequestError) {
+					if (err.code === "P2025") {
+						throw new NotFoundException("Friend not found");
+					}
+				}
+				throw err;
+			})
+			const result = await this.conn.chat.findFirst({
+				where: { dm_key: `${smallerId}:${biggerId}` },
+				select: { id: true }
+			})
+			if (result?.id) {
+				return result.id;
+			}
+			return await this.conn.$transaction(async (t) => {
 				const createChat = await t.chat.create({data: {type: "DIRECT", dm_key: `${smallerId}:${biggerId}`}});
 				await t.chat_user.createMany({
 					data: [
@@ -142,14 +159,15 @@ export class ChatsService {
 						{user_id: targetId,	 chat_id: createChat.id, privilage: "USER"},
 					]
 				})
+				return createChat.id;
 			})
 		} else if (chatType === "GROUP") {
-			await this.conn.$transaction(async (t) => {
+			return await this.conn.$transaction(async (t) => {
 				const createChat = await t.chat.create({data: {type: "GROUP"}});
 				await t.chat_user.create({data: {user_id: userId, chat_id: createChat.id, privilage: "OWNER"}});
+				return createChat.id;
 			})
 		}
-		return;
 	}
 
 	async getChats(userId: bigint) {

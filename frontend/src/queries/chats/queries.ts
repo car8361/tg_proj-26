@@ -10,6 +10,7 @@ import type {
 import { ChatType } from "../utils.ts";
 import { statusWithMessage } from "../utils.ts";
 import {queryClient} from "../../queryClient.ts";
+import {useNavigate} from "react-router";
 
 export const useQueryChats = () => useQuery<GetChats>({
 	queryKey: ["chats"],
@@ -39,26 +40,30 @@ export const useQueryMessages = (chatId: string) => useSuspenseQuery<GetMessages
 	},
 })
 
-export const useMutationChat = () => useMutation({
-	mutationFn: async ({chatType, targetId} : {chatType: ChatType, targetId?: string}) => {
-		const res = await fetch("/api/chats", {
-			method: "POST",
-			credentials: "include",
-			headers: {"Content-Type": "application/json"},
-			body: JSON.stringify({chatType, targetId}),
-		})
-		if (!res.ok) {
-			throw new Error(statusWithMessage[res.status] ?? "Failed to fetch data");
+export const useMutationChat = () => {
+	const navigate = useNavigate();
+	return useMutation({
+		mutationFn: async ({chatType, targetId}: { chatType: ChatType, targetId?: string }) => {
+			const res = await fetch("/api/chats", {
+				method: "POST",
+				credentials: "include",
+				headers: {"Content-Type": "application/json"},
+				body: JSON.stringify({chatType, targetId}),
+			})
+			if (!res.ok) {
+				throw new Error(statusWithMessage[res.status] ?? "Failed to fetch data");
+			}
+			return res;
+		},
+		onSuccess: async (res) => {
+			if (res.ok) {
+				queryClient.invalidateQueries({queryKey: ["chats"]});
+				const data = await res.json();
+				navigate(`/app?chatId=${data.id}`);
+			}
 		}
-		return res;
-	},
-	onSuccess: (res) => {
-		if (res.ok) {
-			queryClient.invalidateQueries({queryKey: ["chats"]});
-			location.reload();
-		}
-	}
-})
+	})
+}
 
 export const useMutationDeleteChat = () => useMutation({
 	mutationFn: async (chatId: string) => {

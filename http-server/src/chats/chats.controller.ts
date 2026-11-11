@@ -123,9 +123,9 @@ export class ChatsController {
 
   @Post("/")
   @HttpCode(200)
-  async createChat(@SessionUserId() userId: bigint, @Body() body: CreateChatDto, @Res() res: Response) {
-    await this.chatsService.createChat(userId, body.chatType, body.targetId);
-    return res.status(200).json({success: true});
+  async createChat(@SessionUserId() userId: bigint, @Body() body: CreateChatDto) {
+    const id = await this.chatsService.createChat(userId, body.chatType, body.targetId);
+    return {success: true, id};
   }
 
   @Patch("/:chatId")
