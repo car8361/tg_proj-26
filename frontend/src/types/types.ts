@@ -48,6 +48,10 @@ export interface GetChats {
 		name: string;
 		id: string;
 	}[];
+	directUsers: {
+		chat_id: string;
+		user_id: string;
+	}
 }
 
 export interface GetChat {

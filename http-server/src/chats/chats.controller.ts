@@ -111,7 +111,7 @@ export class ChatsController {
   @HttpCode(200)
   async getChats(@SessionUserId() userId: bigint) {
     const result = await this.chatsService.getChats(userId);
-    return {chats: result};
+    return {...result};
   }
 
   @Get("/:chatId")
@@ -125,7 +125,8 @@ export class ChatsController {
   @HttpCode(200)
   async createChat(@SessionUserId() userId: bigint, @Body() body: CreateChatDto) {
     const id = await this.chatsService.createChat(userId, body.chatType, body.targetId);
-    return {success: true, id};
+    console.log(`ID: ${id}`)
+    return {success: true, id: id};
   }
 
   @Patch("/:chatId")

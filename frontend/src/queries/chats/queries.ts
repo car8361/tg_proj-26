@@ -44,7 +44,8 @@ export const useMutationChat = () => {
 	const navigate = useNavigate();
 	return useMutation({
 		mutationFn: async ({chatType, targetId}: { chatType: ChatType, targetId?: string }) => {
-			const res = await fetch("/api/chats", {
+			console.log(`SENDING: chatType: ${chatType}, targetId: ${targetId}`);
+			const res = await fetch("/api/chats/", {
 				method: "POST",
 				credentials: "include",
 				headers: {"Content-Type": "application/json"},
@@ -59,6 +60,7 @@ export const useMutationChat = () => {
 			if (res.ok) {
 				queryClient.invalidateQueries({queryKey: ["chats"]});
 				const data = await res.json();
+				console.log("MUT CHAT DATA", data);
 				navigate(`/app?chatId=${data.id}`);
 			}
 		}

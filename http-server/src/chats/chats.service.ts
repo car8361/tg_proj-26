@@ -131,7 +131,9 @@ export class ChatsService {
 
 	async createChat(userId: bigint, chatType: ChatEnum, targetId: bigint) {
 		if (chatType === "DIRECT") {
-			if (targetId === targetId) {return;}
+			if (userId === targetId) {
+				throw new BadRequestException("Cannot make a DM with yourself")
+			}
 			const biggerId = userId > targetId ? userId : targetId;
 			const smallerId = userId < targetId ? userId : targetId;
 			await this.conn.relation.findFirstOrThrow({
@@ -149,7 +151,7 @@ export class ChatsService {
 				select: { id: true }
 			})
 			if (result?.id) {
-				return result.id;
+				return result.id.toString();
 			}
 			return await this.conn.$transaction(async (t) => {
 				const createChat = await t.chat.create({data: {type: "DIRECT", dm_key: `${smallerId}:${biggerId}`}});
@@ -159,13 +161,13 @@ export class ChatsService {
 						{user_id: targetId,	 chat_id: createChat.id, privilage: "USER"},
 					]
 				})
-				return createChat.id;
+				return createChat.id.toString();
 			})
 		} else if (chatType === "GROUP") {
 			return await this.conn.$transaction(async (t) => {
 				const createChat = await t.chat.create({data: {type: "GROUP"}});
 				await t.chat_user.create({data: {user_id: userId, chat_id: createChat.id, privilage: "OWNER"}});
-				return createChat.id;
+				return createChat.id.toString();
 			})
 		}
 	}
@@ -173,9 +175,20 @@ export class ChatsService {
 	async getChats(userId: bigint) {
 		const res = await this.conn.chat_user.findMany({
 			where: { user_id: userId },
-			select: { chat_user_chat_reference: { select: { name: true, id: true }}}
+			select: { chat_user_chat_reference: { select: { name: true, id: true, type: true } } },
 		});
-		return res.map((r) => ({name: r.chat_user_chat_reference.name, id: r.chat_user_chat_reference.id.toString()}));
+		const directIds = res
+			.filter(r => r.chat_user_chat_reference.type === "DIRECT")
+			.map(r => r.chat_user_chat_reference.id)
+		const directUsers = await this.conn.chat_user.findMany({
+			where: { user_id: { in: directIds } },
+			select: { chat_id: true, user_id: true },
+			orderBy: { id: "desc" }
+		})
+		return {
+			chats: res.map((r) => ({name: r.chat_user_chat_reference.name, id: r.chat_user_chat_reference.id.toString()})),
+			directUsers: directUsers.map(u => ({chat_id: u.user_id.toString(), user_id: u.user_id.toString().toString()})),
+		};
 	}
 
 	async getChat(userId: bigint, chatId: bigint) {
