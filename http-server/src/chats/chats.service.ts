@@ -155,10 +155,18 @@ export class ChatsService {
 			}
 			return await this.conn.$transaction(async (t) => {
 				const createChat = await t.chat.create({data: {type: "DIRECT", dm_key: `${smallerId}:${biggerId}`}});
+				const users = await t.user.findMany({
+					where: {
+						id: {
+							in: [userId, targetId]
+						}
+					},
+					select: {username: true, id: true}
+				}) //pozor na pořadí vrácené..
 				await t.chat_user.createMany({
 					data: [
-						{user_id: userId, chat_id: createChat.id, privilage: "USER"},
-						{user_id: targetId,	 chat_id: createChat.id, privilage: "USER"},
+						{user_id: userId, chat_id: createChat.id, privilage: "USER", display_username: users.filter(u => u.id === userId)[0].username},
+						{user_id: targetId,	 chat_id: createChat.id, privilage: "USER", display_username: users.filter(u => u.id === targetId)[0].username},
 					]
 				})
 				return createChat.id.toString();
@@ -166,7 +174,7 @@ export class ChatsService {
 		} else if (chatType === "GROUP") {
 			return await this.conn.$transaction(async (t) => {
 				const createChat = await t.chat.create({data: {type: "GROUP"}});
-				await t.chat_user.create({data: {user_id: userId, chat_id: createChat.id, privilage: "OWNER"}});
+				await t.chat_user.create({data: {user_id: userId, chat_id: createChat.id, privilage: "OWNER", display_username: "hhh"}});
 				return createChat.id.toString();
 			})
 		}
@@ -175,19 +183,28 @@ export class ChatsService {
 	async getChats(userId: bigint) {
 		const res = await this.conn.chat_user.findMany({
 			where: { user_id: userId },
-			select: { chat_user_chat_reference: { select: { name: true, id: true, type: true } } },
+			select: { chat_user_chat_reference: { select: { name: true, id: true, type: true, dm_key: true } } },
 		});
-		const directIds = res
-			.filter(r => r.chat_user_chat_reference.type === "DIRECT")
-			.map(r => r.chat_user_chat_reference.id)
+		const directChats = res.filter(r => r.chat_user_chat_reference.type === "DIRECT");
+		const otherUserIds = directChats.map(r => {
+			const spl = r.chat_user_chat_reference.dm_key!.split(":")
+			const ind = spl.findIndex(i => i === userId.toString()) === 0 ? 1 : 0;
+			return ({other_id: BigInt(spl[ind]), chat_id: r.chat_user_chat_reference.id}); //potential server crash point - probably not though
+		})
 		const directUsers = await this.conn.chat_user.findMany({
-			where: { user_id: { in: directIds } },
-			select: { chat_id: true, user_id: true },
-			orderBy: { id: "desc" }
+			where: {
+				AND: otherUserIds.map(u => ({
+					user_id: u.other_id,
+					chat_id: u.chat_id,
+				}))
+			},
+			select: { display_username: true, chat_id: true, chat_user_chat_reference: { select: { type: true } } }
 		})
 		return {
-			chats: res.map((r) => ({name: r.chat_user_chat_reference.name, id: r.chat_user_chat_reference.id.toString()})),
-			directUsers: directUsers.map(u => ({chat_id: u.user_id.toString(), user_id: u.user_id.toString().toString()})),
+			chats: res.map((r) => ({
+				name: directUsers.map(u => u.chat_user_chat_reference.type === ChatEnum.DIRECT ? u.display_username : r.chat_user_chat_reference.name),
+				id: r.chat_user_chat_reference.id.toString()
+			})),
 		};
 	}
 
@@ -195,8 +212,20 @@ export class ChatsService {
 		try {
 			const res = await this.conn.chat_user.findFirstOrThrow({
 				where: {user_id: userId, chat_id: chatId},
-				select: {chat_user_chat_reference: {select: {name: true, id: true, type: true}}}
+				select: {chat_user_chat_reference: {select: {name: true, id: true, type: true, dm_key: true}}},
 			});
+			if (res.chat_user_chat_reference.type === ChatEnum.DIRECT) {
+				const spl = res.chat_user_chat_reference.dm_key!.split(":");
+				const ind = spl.findIndex(i => i === userId.toString()) === 0 ? 1 : 0;
+				const user = await this.conn.chat_user.findFirst({
+					where: {user_id: userId, chat_id: chatId},
+					select: { display_username: true }
+				})
+				return {
+					name: user?.display_username,
+					id: res?.chat_user_chat_reference.id.toString()
+				};
+			}
 			return {
 				name: res?.chat_user_chat_reference.name,
 				id: res?.chat_user_chat_reference.id.toString()
@@ -256,17 +285,17 @@ export class ChatsService {
 
 	async createMembers(userId: bigint, targetIds: bigint[], chatId: bigint) {
 		try {
-			const friendIds = await this.conn.relation.findMany({
+			const friendsInfo = await this.conn.relation.findMany({
 				where: { owner_id: userId, other_id: { in: targetIds}, relationship: "FRIEND"},
-				select: { other_id: true }
+				select: { other_id: true, relation_other_user_reference: { select: {username: true} } }
 			})
 			targetIds.map(tid => {
-				if (!friendIds.find(fid => fid.other_id === tid)) {
+				if (!friendsInfo.find(fid => fid.other_id === tid)) {
 					throw new NotFoundException("Invalid target IDs");
 				}
 			})
 			await this.conn.chat_user.createMany({
-				data: targetIds.map(id => ({ chat_id: chatId, user_id: id, privilage: "USER" }))
+				data: friendsInfo.map(finfo => ({ chat_id: chatId, user_id: finfo.other_id, privilage: "USER", display_username: finfo.relation_other_user_reference.username }))
 			})
 			const users = await this.conn.chat_user.findMany({
 				where: { chat_id: chatId },

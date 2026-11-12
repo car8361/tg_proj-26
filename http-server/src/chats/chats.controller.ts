@@ -102,7 +102,7 @@ export class ChatsController {
     return {success: true};
   }
 
-  @Delete("/:chaatId/members/leave")
+  @Delete("/:chatId/members/leave")
   async leaveChat(@Param('chatId', ParseBigintPipe) chatId: bigint, @SessionUserId() userId: bigint) {
 
   }
