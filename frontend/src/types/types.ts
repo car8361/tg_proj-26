@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type {PrivilageEnum} from "../queries/utils.ts";
+import type {PrivilageEnum, ChatType} from "../queries/utils.ts";
 
 export interface Login {
 	identifier: string;
@@ -58,6 +58,7 @@ export interface GetChat {
 	chat: {
 		name: string;
 		id: string;
+		type: ChatType;
 	};
 }
 

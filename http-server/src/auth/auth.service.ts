@@ -110,19 +110,6 @@ export class AuthService {
     }
     return "200";
   }
-  async deleteUser(id: bigint) {
-    try {
-      await this.conn.user.delete({
-        where: {id},
-      });
-      this.gateway.exitRoom(id.toString());
-    } catch (err) {
-      if (err instanceof PrismaClientKnownRequestError && err.code === "P2025") {
-        throw new NotFoundException(`User ${id} not found`)
-      }
-      throw err;
-    }
-  }
   async getUser(username: string) {
     return this.conn.user.findFirst({
       where: { username },

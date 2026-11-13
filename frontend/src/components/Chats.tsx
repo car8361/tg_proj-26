@@ -1,14 +1,18 @@
 import {
+	useMutationAddMembers,
+	useMutationSendMessage,
+	useMutationUpdChat,
+	useQueryChat,
 	useQueryChatMembers,
 	useQueryChatMessages,
-	useMutationSendMessage,
-	useQueryChat, useQueryChatUserPrivilages, useMutationAddMembers, useMutationUpdChat
+	useQueryChatUserPrivilages
 } from "../queries/chats/queries.ts";
 
-import {UsersRound, Plus, Check, X} from "lucide-react";
-import { useState } from "react";
+import {Check, Plus, UsersRound, X} from "lucide-react";
+import {useState} from "react";
 import {useQueryFriends} from "../queries/relations/queries.ts";
-import type {GetChat, GetChatMembers, GetFriends} from "../types/types.ts";
+import type {GetChatMembers, GetFriends} from "../types/types.ts";
+import {ChatType} from "../queries/utils.ts";
 
 function Chats({chatId} : {chatId: string}) {
 	const [membersOpen, setMembersOpen] = useState(false);
@@ -48,7 +52,9 @@ function Chats({chatId} : {chatId: string}) {
 										<UsersRound />
 										<h2 className={"text-2xl"}>Members</h2>
 									</div>
-									<Plus width="40" height="40" className="cursor-pointer" onClick={() => (setMembersOpen(true))} />
+									{chatData.data?.chat.type === ChatType.GROUP && (
+										<Plus width="40" height="40" className="cursor-pointer" onClick={() => (setMembersOpen(true))} />
+									)}
 								</div>
 								{membersOpen && (
 									<AddMemberDiv chatId={chatData.data!.chat.id} chatMembers={chatMembers.data} userFriends={userFriends.data} setOpen={setMembersOpen} />

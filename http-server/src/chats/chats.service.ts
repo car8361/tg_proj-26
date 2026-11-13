@@ -174,7 +174,11 @@ export class ChatsService {
 		} else if (chatType === "GROUP") {
 			return await this.conn.$transaction(async (t) => {
 				const createChat = await t.chat.create({data: {type: "GROUP"}});
-				await t.chat_user.create({data: {user_id: userId, chat_id: createChat.id, privilage: "OWNER", display_username: "hhh"}});
+				const user = await t.chat_user.findFirstOrThrow({
+					where: { id: userId },
+					select: {username: true, id: true}
+				})
+				await t.chat_user.create({data: {user_id: userId, chat_id: createChat.id, privilage: "OWNER", display_username: user.username}});
 				return createChat.id.toString();
 			})
 		}
@@ -202,7 +206,7 @@ export class ChatsService {
 		})
 		return {
 			chats: res.map((r) => ({
-				name: directUsers.map(u => u.chat_user_chat_reference.type === ChatEnum.DIRECT ? u.display_username : r.chat_user_chat_reference.name),
+				name: directUsers.map(u => ( u.chat_id === r.chat_user_chat_reference.id && u.chat_user_chat_reference.type === ChatEnum.DIRECT) ? u.display_username : r.chat_user_chat_reference.name),
 				id: r.chat_user_chat_reference.id.toString()
 			})),
 		};
@@ -223,12 +227,14 @@ export class ChatsService {
 				})
 				return {
 					name: user?.display_username,
-					id: res?.chat_user_chat_reference.id.toString()
+					id: res?.chat_user_chat_reference.id.toString(),
+					type: res.chat_user_chat_reference.type,
 				};
 			}
 			return {
 				name: res?.chat_user_chat_reference.name,
-				id: res?.chat_user_chat_reference.id.toString()
+				id: res?.chat_user_chat_reference.id.toString(),
+				type: res.chat_user_chat_reference.type,
 			};
 		} catch (err) {
 			if (err instanceof Prisma.PrismaClientKnownRequestError) {

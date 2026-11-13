@@ -34,6 +34,6 @@ export class ObjectService {
 			Key: `${ruid}.${fileType}`,
 			ContentType: `${allowedExtensionsContentType[fileType]}`,
 		}))
-		return url;
+		return { url: url, path: `https://bucket.dnck.dev/pfp/${ruid}` };
 	}
 }

@@ -91,25 +91,6 @@ export class AuthController {
     }
   }
 
-  @Delete()
-  @UseGuards(SessionUID)
-  @HttpCode(204)
-  async del(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-    @SessionUserId() userId: bigint,
-  ) {
-    await this.authService.deleteUser(userId);
-    await new Promise<void>((resolve, reject) => {
-      req.session.destroy((err: Error) => {
-        if (err) reject(err);
-        else resolve();
-      });
-    });
-    res.clearCookie('connect.sid');
-    return {ok: true};
-  }
-
   @Get('user')
   @HttpCode(200)
   async user(@Query() { username }: UsernameDto) {

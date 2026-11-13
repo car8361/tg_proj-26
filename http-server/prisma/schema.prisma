@@ -13,10 +13,12 @@ datasource db {
 }
 
 model User {
-  id       BigInt @id @default(autoincrement())
-  email    String @unique @db.VarChar(255)
-  username String @unique @db.VarChar(64)
-  password String @db.VarChar(255)
+  id          BigInt  @id @default(autoincrement())
+  email       String  @unique @db.VarChar(255)
+  username    String  @unique @db.VarChar(64)
+  password    String  @db.VarChar(255)
+  description String? @db.VarChar(512)
+  picture     String  @default("https://bucket.dnck.dev/pfp/default-avatar-icon-of-social-media-user-vector.jpg") @db.VarChar(128)
 
   user_email_code_reference     Email_code[]   @relation("email_codes_user_reference")
   user_relation_owner_reference Relation[]     @relation("relation_owner_id_user_reference")

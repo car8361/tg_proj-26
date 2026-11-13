@@ -71,6 +71,7 @@ function AppPanel({children} : { children?: ReactNode }) {
 						)
 					}
 				</div>
+				<div className="shrink-0 h-[5vh]">Hi</div>
 			</div>
 			{chatId ? (
 				<Chats chatId={chatId} />

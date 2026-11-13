@@ -1,5 +1,11 @@
-import {IsEnum} from "class-validator";
-import { z } from "zod";
+import * as querystring from "node:querystring";
+import {IsEnum, IsString, Length} from "class-validator";
+
+export class PatchMeDto {
+	@IsString()
+	@Length(0, 512)
+	description: string;
+}
 
 export const allowedExtensions = ["png", "jpg", "jpeg"];
 
@@ -11,7 +17,7 @@ export const allowedExtensionsContentType: Record <string, string> = {
 
 export type AllowedExtensionsInterface = "png" | "jpg" | "jpeg";
 
-export class UploadImg {
+export class PostPictureDto {
 	@IsEnum(allowedExtensions)
 	fileType: AllowedExtensionsInterface;
 }
