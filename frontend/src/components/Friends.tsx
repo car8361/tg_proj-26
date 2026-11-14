@@ -65,6 +65,7 @@ function Friends() {
 								data?.friends.map((friend) => (
 									<div className="flex justify-center">
 										<div className="flex flex-row justify-center items-center gap-4 bg-blue-200 transition-colors hover:bg-blue-400 w-[50%] text-2xl cursor-pointer rounded-xl" onClick={() => gotoDM(friend.other_id)}>
+											<img className="rounded-full h-[3vh] ml-4" src={friend.other_picture} alt="img"/>
 											<p className="select-none p-2" onClick={() => gotoDM(friend.other_id)}>{friend.other_username}</p>
 											<SendHorizontal className="ml-auto text-black transition-colors duration-300 hover:text-white" onClick={() => gotoDM(friend.other_id)} />
 											<button className="p-2 cursor-pointer text-black transition-colors duration-300  hover:text-white" onClick={() => {console.log("TO MUTATE: ", friend.other_id); deleteFriend.mutate(friend.other_id)}}><CircleX /></button>
@@ -81,6 +82,7 @@ function Friends() {
 					<h2 className={"text-2xl pt-6 pb-4"}>Pending friend requests</h2>
 					{(invitesPending.data && invitesPending.data.invites.length > 0) ? invitesPending.data.invites.map(f => (
 						<div className={"flex flex-row justify-center gap-4 text-xl"}>
+							<img src={f.picture} alt="img"/>
 							<p>{f.username}</p>
 							<p>{f.created_at}</p>
 							<button className="cursor-pointer" onClick={() => invitesAccept.mutate(f.invite_id)}><CircleCheck /></button>
@@ -94,6 +96,7 @@ function Friends() {
 					<h2 className={"text-2xl pt-6 pb-4"}>Outgoing friend requests</h2>
 					{(invitesOutgoing.data && invitesOutgoing.data.invites.length > 0) ? invitesOutgoing.data.invites.map(f => (
 						<div className="flex flex-row justify-center gap-4 text-xl">
+							<img src={f.picture} alt="img"/>
 							<p>{f.username}</p>
 							<p>{f.created_at}</p>
 							<button className="cursor-pointer" onClick={() => invitesDelete.mutate(f.invite_id)}><CircleX /></button>

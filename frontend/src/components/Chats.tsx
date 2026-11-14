@@ -31,21 +31,24 @@ function Chats({chatId} : {chatId: string}) {
 		<div className={"flex flex-1 flex-row"}>
 			{chatId !== undefined && (
 					<div className="w-full bg-gray-100 grid grid-rows-[1fr_19fr]">
-						{(userChatPrivelages.data?.privilage === "OWNER" || userChatPrivelages.data?.privilage === "ADMIN") ? (
-							<input className="border border-white text-2xl grid items-center p-2 rounded-bl-2xl transition-colors hover:text-gray-400"
-							       value={chatName !== null ? chatName : chatData.data?.chat.name } onChange={(e) => {setChatName(e.currentTarget.value)}}
-							       onBlur={() => {
-									   if (!chatName || !chatData.data?.chat || chatData.data?.chat.name === chatName) {
-										   return;
-									   }
-										updChatMut.mutate({chatId: chatData.data?.chat.id, name: chatName});
-								   }}
-							></input>
-						) : (
-							<div className="border border-white text-2xl grid items-center p-2 rounded-bl-2xl">
-								{chatData.data?.chat.name ?? "Invalid chat"}
-							</div>
-						)}
+						<div className="flex flex-row border border-white text-2xl items-center">
+							<img className="ml-4 rounded-full h-[3vh] aspect-square" src={chatData.data?.chat.picture} alt="img" />
+							{(userChatPrivelages.data?.privilage === "OWNER" || userChatPrivelages.data?.privilage === "ADMIN") ? (
+								<input className="text-2xl outline-none hover:outline-none grid items-center p-2 rounded-bl-2xl transition-colors hover:text-gray-400"
+									   value={chatName !== null ? chatName : chatData.data?.chat.name } onChange={(e) => {setChatName(e.currentTarget.value)}}
+									   onBlur={() => {
+										   if (!chatName || !chatData.data?.chat || chatData.data?.chat.name === chatName) {
+											   return;
+										   }
+											updChatMut.mutate({chatId: chatData.data?.chat.id, name: chatName});
+									   }}
+								></input>
+							) : (
+								<div className="grid p-2">
+									{chatData.data?.chat.name ?? "Invalid chat"}
+								</div>
+							)}
+						</div>
 						<div className="bg-white grid grid-cols-[6fr_1fr] grid-rows-[19fr_1fr]">
 							<div className=" col-[2] bg-gray-100  row-span-full flex flex-col">
 								<div className={"flex flex-row justify-center p-2 items-center border-b"}>
@@ -62,19 +65,28 @@ function Chats({chatId} : {chatId: string}) {
 								)}
 								<div className={"bg-gray-100"}>
 									{chatMembers.data?.members && chatMembers.data?.members.map((m, i) => (
-										<div>{m.username}</div>
+										<div className="bg-gray-100 hover:bg-gray-200 h-[5vh]">
+											<div className="flex flex-row items-center gap-5">
+												<img className="ml-5 mt-5 rounded-full h-[3vh]" src={m.picture} />
+												<div className="flex flex-col my-auto">
+													<p>{m.display_name}</p>
+													<p>@{m.username}</p>
+												</div>
+											</div>
+										</div>
 									))}
 								</div>
 							</div>
 							<div className="col-[1] w-full overflow-y-scroll wrap-break-word text-2xl">
 								{(chatMessages.data && chatMessages.data?.messages.length > 0) ? (chatMessages.data?.messages.map((m, i) => (
-									<>
-										<div className="flex flex-row gap-4 items-center">
-											<p className="text-2xl">{m.username}</p>
-											<p className="text-xl">{normalDate(m.created_at)}</p>
+									<div className="hover:bg-gray-200">
+										<div className="ml-4 flex flex-row gap-4 items-center ">
+											<img src={m.picture} alt="img" className="mt-4 border rounded-full h-[3vh]" />
+											<p className="text-2xl mt-auto">{m.display_name}</p>
+											<p className="text-xl mt-auto">{normalDate(m.created_at)}</p>
 										</div>
-										<p>{m.msg}</p>
-									</>
+										<p className="ml-6 mt-4">{m.msg}</p>
+									</div>
 								))) : (
 									<div>No messages found.</div>
 								)}

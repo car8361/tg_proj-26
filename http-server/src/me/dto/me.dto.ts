@@ -7,6 +7,9 @@ export class PatchMeDto {
 	@IsString()
 	@Length(0, 512)
 	description: string;
+	@IsString()
+	@Length(0, 64)
+	display_name: string;
 }
 
 export class PostPictureDto {

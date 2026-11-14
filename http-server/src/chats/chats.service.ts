@@ -114,7 +114,7 @@ export class ChatsService {
 				id: true,
 				chat_id: true,
 				chat_message_user_reference: {
-					select: {username: true}
+					select: {username: true, picture: true, display_name: true}
 				},
 				msg: true,
 				created_at: true
@@ -124,8 +124,10 @@ export class ChatsService {
 			id: m.id.toString(),
 			chat_id: m.chat_id.toString(),
 			username: m.chat_message_user_reference.username,
+			display_name: m.chat_message_user_reference.display_name,
 			msg: m.msg,
 			created_at: m.created_at,
+			picture: m.chat_message_user_reference.picture
 		}));
 	}
 
@@ -174,11 +176,11 @@ export class ChatsService {
 		} else if (chatType === "GROUP") {
 			return await this.conn.$transaction(async (t) => {
 				const createChat = await t.chat.create({data: {type: "GROUP"}});
-				const user = await t.chat_user.findFirstOrThrow({
+				const user = await t.user.findFirst({
 					where: { id: userId },
 					select: {username: true, id: true}
 				})
-				await t.chat_user.create({data: {user_id: userId, chat_id: createChat.id, privilage: "OWNER", display_username: user.username}});
+				await t.chat_user.create({data: {user_id: userId, chat_id: createChat.id, privilage: "OWNER", display_username: user!.username}});
 				return createChat.id.toString();
 			})
 		}
@@ -287,9 +289,15 @@ export class ChatsService {
 	async getMembers(chatId: bigint) {
 		const userRows = await this.conn.chat_user.findMany({
 			where: { chat_id: chatId },
-			select: { privilage: true, chat_user_user_reference: { select: { id: true, username: true, picture: true } } }
+			select: { privilage: true, chat_user_user_reference: { select: { id: true, username: true, picture: true, display_name: true } } }
 		})
-		return userRows.map(r => ({id: r.chat_user_user_reference.id.toString(), username: r.chat_user_user_reference.username, privilage: r.privilage, picture: r.chat_user_user_reference.picture}));
+		return userRows.map(r => ({
+			id: r.chat_user_user_reference.id.toString(),
+			username: r.chat_user_user_reference.username,
+			privilage: r.privilage,
+			picture: r.chat_user_user_reference.picture,
+			display_name: r.chat_user_user_reference.display_name
+		}));
 	}
 
 	async createMembers(userId: bigint, targetIds: bigint[], chatId: bigint) {

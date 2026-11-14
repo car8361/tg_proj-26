@@ -1,11 +1,10 @@
-import {useMutation, useQuery, useSuspenseQuery} from "@tanstack/react-query";
+import {useMutation, useQuery} from "@tanstack/react-query";
 import type {
 	GetChat,
 	GetChatMembers,
 	GetChatMessages,
 	 GetChatPrivilage,
 	GetChats,
-	GetMessages
 } from "../../types/types.ts";
 import { ChatType } from "../utils.ts";
 import { statusWithMessage } from "../utils.ts";
@@ -16,20 +15,6 @@ export const useQueryChats = () => useQuery<GetChats>({
 	queryKey: ["chats"],
 	queryFn: async () => {
 		const res = await fetch("/api/chats", {
-			method: "GET",
-			credentials: "include",
-		});
-		if (!res.ok) {
-			throw new Error(statusWithMessage[res.status] ?? "Failed to fetch data");
-		}
-		return res.json();
-	},
-})
-
-export const useQueryMessages = (chatId: string) => useSuspenseQuery<GetMessages>({
-	queryKey: ["messages", chatId],
-	queryFn: async (chatId) => {
-		const res = await fetch(`/api/chats/messages/${chatId}`, {
 			method: "GET",
 			credentials: "include",
 		});

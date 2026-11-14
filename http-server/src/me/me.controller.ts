@@ -19,7 +19,7 @@ export class MeController {
 
   @Patch("/")
   async patchMe(@SessionUserId() userId: bigint, @Body() body: PatchMeDto) {
-    return await this.meService.patchMe(userId, body.description)
+    return await this.meService.patchMe(userId, body.display_name, body.description);
   }
 
   @Post("/picture")

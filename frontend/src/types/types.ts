@@ -73,6 +73,7 @@ export interface GetFriends {
 		owner_id: string;
 		other_id: string;
 		other_picture: string;
+		other_display_name: string;
 	}[]
 }
 
@@ -84,6 +85,7 @@ export interface GetPending {
 		username: string,
 		created_at: string
 		picture: string;
+		display_name: string;
 	}[]
 }
 
@@ -95,6 +97,7 @@ export interface GetOutgoing {
 		username: string,
 		created_at: string
 		picture: string;
+		display_name: string;
 	}[]
 }
 
@@ -106,7 +109,8 @@ export interface GetChatMessages {
 		username: string;
 		msg: string;
 		created_at: string;
-		picture: string; // needs to be added on serv
+		picture: string;
+		display_name: string;
 	}[]
 }
 
@@ -116,6 +120,7 @@ export interface GetChatMembers {
 		id: string;
 		username: string;
 		picture: string;
+		display_name: string;
 	}[]
 }
 
@@ -129,4 +134,5 @@ export interface GetMe {
 	username: string;
 	description: string;
 	picture: string;
+	display_name: string;
 }

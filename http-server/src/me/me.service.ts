@@ -17,6 +17,7 @@ export class MeService {
 				username: true,
 				description: true,
 				picture: true,
+				display_name: true
 			}
 		}).catch(e => {
 			if (e instanceof PrismaClientKnownRequestError) {
@@ -26,14 +27,13 @@ export class MeService {
 			}
 			throw e;
 		})
-		console.log("RESULT: ", result, "\n\n\n\n\n\n")
-		return {id: result.id.toString(), username: result.username, description: result.description, picture: result.picture};
+		return {id: result.id.toString(), username: result.username, description: result.description, picture: result.picture, display_name: result.display_name};
 	}
 
-	async patchMe(userId: bigint, description: string) {
+	async patchMe(userId: bigint, display_name: string, description: string) {
 		await this.conn.user.update({
 			where: { id: userId },
-			data: { description: description },
+			data: { description: description, display_name: display_name },
 		})
 		return;
 	}

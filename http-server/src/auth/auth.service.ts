@@ -13,7 +13,7 @@ export class AuthService {
       const hash = await b.hash(password, 12);
       try {
       const user = await this.conn.user.create({
-        data: {username, email, password: hash },
+        data: {username, email, password: hash, display_name: username },
         select: { id: true, username: true },
       });
 

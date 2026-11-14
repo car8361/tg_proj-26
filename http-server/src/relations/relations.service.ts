@@ -14,7 +14,7 @@ export class RelationsService {
 	async getIngoingInvites(userId: bigint) {
 		const result = await this.conn.relation.findMany({
 			where: { owner_id: userId, relationship: "INVITE_INGOING" },
-			select: { id: true, created_at: true, relation_other_user_reference: { select: { id: true, username: true, picture: true } } }
+			select: { id: true, created_at: true, relation_other_user_reference: { select: { id: true, username: true, picture: true, display_name: true } } }
 		})
 		return result.map(r => ({
 			invite_id: r.id.toString(),
@@ -22,13 +22,14 @@ export class RelationsService {
 			username: r.relation_other_user_reference.username,
 			created_at: r.created_at,
 			picture: r.relation_other_user_reference.picture,
+			display_name: r.relation_other_user_reference.display_name
 		}))
 	}
 
 	async getOutgoingInvites(userId: bigint) {
 		const result = await this.conn.relation.findMany({
 			where: { owner_id: userId, relationship: "INVITE_OUTGOING" },
-			select: { id: true, created_at: true, relation_other_user_reference: { select: { id: true, username: true, picture: true } } }
+			select: { id: true, created_at: true, relation_other_user_reference: { select: { id: true, username: true, picture: true, display_name: true } } }
 		})
 		return result.map(r => ({
 			invite_id: r.id.toString(),
@@ -36,6 +37,7 @@ export class RelationsService {
 			username: r.relation_other_user_reference.username,
 			created_at: r.created_at,
 			picture: r.relation_other_user_reference.picture,
+			display_name: r.relation_other_user_reference.display_name
 		}))
 	}
 
@@ -132,7 +134,7 @@ export class RelationsService {
 			},
 			select: {
 				relation_owner_user_reference: {select: {username: true, id: true}},
-				relation_other_user_reference: {select: {username: true, id: true, picture: true}},
+				relation_other_user_reference: {select: {username: true, id: true, picture: true, display_name: true}},
 			}
 		})
 		const relations = res.map(res => ({
@@ -141,6 +143,7 @@ export class RelationsService {
 			owner_id: res.relation_owner_user_reference.id.toString(),
 			other_id: res.relation_other_user_reference.id.toString(),
 			other_picture: res.relation_other_user_reference.picture,
+			other_diisplay_name: res.relation_other_user_reference.display_name,
 		}))
 
 		return relations;
