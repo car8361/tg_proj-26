@@ -19,9 +19,9 @@ function App() {
 	const showVerifyOverlay = data && data?.userId && data.verified === "false";
 	return (
 		<div className="flex flex-col min-h-0 h-dvh">
+			{ showVerifyOverlay && <VerifyOverlay /> }
 			<Header />
 			<main className="flex flex-1 flex-col min-h-0 overflow-y-auto">
-				{ showVerifyOverlay && <VerifyOverlay /> }
 				<Routes>
 					<Route path="" element={<RedirectHome/>}/>
 					<Route path="login" element={<Login/>}/>
@@ -31,7 +31,6 @@ function App() {
 					<Route path="*" element={<NotFound />}/>
 				</Routes>
 			</main>
-			<Footer />
 		</div>
 	);
 }

@@ -8,7 +8,7 @@ export class MeService {
 	constructor(private readonly conn: PrismaService, private readonly gateway: SocketGateway) {}
 
 	async getMe(userId: bigint) {
-		return this.conn.user.findFirst({
+		const result = await this.conn.user.findFirstOrThrow({
 			where: {
 				id: userId
 			},
@@ -18,14 +18,24 @@ export class MeService {
 				description: true,
 				picture: true,
 			}
+		}).catch(e => {
+			if (e instanceof PrismaClientKnownRequestError) {
+				if (e.code === "P2025") {
+					throw new NotFoundException("User not found");
+				}
+			}
+			throw e;
 		})
+		console.log("RESULT: ", result, "\n\n\n\n\n\n")
+		return {id: result.id.toString(), username: result.username, description: result.description, picture: result.picture};
 	}
 
 	async patchMe(userId: bigint, description: string) {
-		return this.conn.user.update({
+		await this.conn.user.update({
 			where: { id: userId },
 			data: { description: description },
 		})
+		return;
 	}
 
 	async savePicture(userId: bigint, path: string) {

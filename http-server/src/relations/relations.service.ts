@@ -14,17 +14,29 @@ export class RelationsService {
 	async getIngoingInvites(userId: bigint) {
 		const result = await this.conn.relation.findMany({
 			where: { owner_id: userId, relationship: "INVITE_INGOING" },
-			select: { id: true, created_at: true, relation_other_user_reference: { select: { id: true, username: true } } }
+			select: { id: true, created_at: true, relation_other_user_reference: { select: { id: true, username: true, picture: true } } }
 		})
-		return result.map(r => ({invite_id: r.id.toString(), user_id: r.relation_other_user_reference.id.toString(), username: r.relation_other_user_reference.username, created_at: r.created_at}))
+		return result.map(r => ({
+			invite_id: r.id.toString(),
+			user_id: r.relation_other_user_reference.id.toString(),
+			username: r.relation_other_user_reference.username,
+			created_at: r.created_at,
+			picture: r.relation_other_user_reference.picture,
+		}))
 	}
 
 	async getOutgoingInvites(userId: bigint) {
 		const result = await this.conn.relation.findMany({
 			where: { owner_id: userId, relationship: "INVITE_OUTGOING" },
-			select: { id: true, created_at: true, relation_other_user_reference: { select: { id: true, username: true } } }
+			select: { id: true, created_at: true, relation_other_user_reference: { select: { id: true, username: true, picture: true } } }
 		})
-		return result.map(r => ({invite_id: r.id.toString(), user_id: r.relation_other_user_reference.id.toString(), username: r.relation_other_user_reference.username, created_at: r.created_at}))
+		return result.map(r => ({
+			invite_id: r.id.toString(),
+			user_id: r.relation_other_user_reference.id.toString(),
+			username: r.relation_other_user_reference.username,
+			created_at: r.created_at,
+			picture: r.relation_other_user_reference.picture,
+		}))
 	}
 
 	async createInvite(userId: bigint, targetName: string) {
@@ -120,7 +132,7 @@ export class RelationsService {
 			},
 			select: {
 				relation_owner_user_reference: {select: {username: true, id: true}},
-				relation_other_user_reference: {select: {username: true, id: true}},
+				relation_other_user_reference: {select: {username: true, id: true, picture: true}},
 			}
 		})
 		const relations = res.map(res => ({
@@ -128,6 +140,7 @@ export class RelationsService {
 			other_username: res.relation_other_user_reference.username,
 			owner_id: res.relation_owner_user_reference.id.toString(),
 			other_id: res.relation_other_user_reference.id.toString(),
+			other_picture: res.relation_other_user_reference.picture,
 		}))
 
 		return relations;

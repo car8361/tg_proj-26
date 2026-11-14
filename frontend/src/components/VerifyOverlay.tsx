@@ -60,13 +60,15 @@ function VerifyOverlay() {
 
 	return (
 		(data && data.userId && data.verified === "false") ? (
-			<div id="verify-overlay-div" className="fixed flex flex-col justify-center align-center bg-black w-full h-full z-10">
-				<div>
-					<h1 className="text-white text-2xl text-center pb-10">Verify your verification code</h1>
-					<div className="flex flex-row justify-center gap-4">
-						{Array.from({length: 6}, (_, i) => (
-							<input maxLength={1} id={`input:${i}`} onClick={() => {setTarget(i); console.log(i);}} className={"w-40 cursor-pointer aspect-square bg-white text-9xl text-center border-blue-500 rounded-2xl"}></input>
-						))}
+			<div id="verify-overlay-div" className="fixed flex flex-col justify-center items-center border-box bg-black w-full h-full z-10">
+				<div className={`grid grid-rows-[repeat(3,1fr)] p-10 w-full h-full bg-white`}>
+						<h1 className="row-1 text-black text-3xl lg:text-8xl md:text-5xl mt-auto text-center">Verify your verification code</h1>
+						<div className="row-2 grid grid-cols-6 justify-center gap-4  mx-auto my-auto max-w-[1500px]">
+							{Array.from({length: 6}, (_, i) => (
+								<input maxLength={1} id={`input:${i}`} onClick={() => {setTarget(i); console.log(i);}}
+									   className={`w-full border border-blue-500 cursor-pointer aspect-square bg-white text-9xl text-center rounded-2xl`}>
+								</input>
+							))}
 					</div>
 				</div>
 			</div>

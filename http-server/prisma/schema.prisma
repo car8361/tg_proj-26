@@ -58,6 +58,7 @@ model Chat {
   name       String   @default("New chat")
   dm_key     String?  @unique()
   created_at DateTime @default(now()) @db.Timestamptz(3)
+  picture    String   @default("https://bucket.dnck.dev/grouppicture/people.png")
 
   chat_chat_user_reference    Chat_user[]
   chat_chat_message_reference Chat_message[]

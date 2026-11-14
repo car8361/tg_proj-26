@@ -47,11 +47,8 @@ export interface GetChats {
 	chats: {
 		name: string;
 		id: string;
+		picture: string;
 	}[];
-	directUsers: {
-		chat_id: string;
-		user_id: string;
-	}
 }
 
 export interface GetChat {
@@ -59,6 +56,7 @@ export interface GetChat {
 		name: string;
 		id: string;
 		type: ChatType;
+		picture: string;
 	};
 }
 
@@ -74,13 +72,8 @@ export interface GetFriends {
 		other_username: string;
 		owner_id: string;
 		other_id: string;
+		other_picture: string;
 	}[]
-}
-
-export interface GetMessages {
-	messages: {
-
-	}
 }
 
 export interface GetPending {
@@ -90,6 +83,7 @@ export interface GetPending {
 		user_id: string,
 		username: string,
 		created_at: string
+		picture: string;
 	}[]
 }
 
@@ -100,6 +94,7 @@ export interface GetOutgoing {
 		user_id: string,
 		username: string,
 		created_at: string
+		picture: string;
 	}[]
 }
 
@@ -111,6 +106,7 @@ export interface GetChatMessages {
 		username: string;
 		msg: string;
 		created_at: string;
+		picture: string; // needs to be added on serv
 	}[]
 }
 
@@ -119,10 +115,18 @@ export interface GetChatMembers {
 	members: {
 		id: string;
 		username: string;
+		picture: string;
 	}[]
 }
 
 export interface GetChatPrivilage {
 	success: boolean;
 	privilage: PrivilageEnum;
+}
+
+export interface GetMe {
+	id: string;
+	username: string;
+	description: string;
+	picture: string;
 }

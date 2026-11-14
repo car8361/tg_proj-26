@@ -187,7 +187,7 @@ export class ChatsService {
 	async getChats(userId: bigint) {
 		const res = await this.conn.chat_user.findMany({
 			where: { user_id: userId },
-			select: { chat_user_chat_reference: { select: { name: true, id: true, type: true, dm_key: true } } },
+			select: { chat_user_chat_reference: { select: { name: true, id: true, type: true, dm_key: true, picture: true } } },
 		});
 		const directChats = res.filter(r => r.chat_user_chat_reference.type === "DIRECT");
 		const otherUserIds = directChats.map(r => {
@@ -202,12 +202,13 @@ export class ChatsService {
 					chat_id: u.chat_id,
 				}))
 			},
-			select: { display_username: true, chat_id: true, chat_user_chat_reference: { select: { type: true } } }
+			select: { display_username: true, chat_id: true, chat_user_user_reference: {select: {picture: true}}, chat_user_chat_reference: { select: { type: true }, } }
 		})
 		return {
 			chats: res.map((r) => ({
 				name: directUsers.map(u => ( u.chat_id === r.chat_user_chat_reference.id && u.chat_user_chat_reference.type === ChatEnum.DIRECT) ? u.display_username : r.chat_user_chat_reference.name),
-				id: r.chat_user_chat_reference.id.toString()
+				id: r.chat_user_chat_reference.id.toString(),
+				picture: directUsers.map(u => ( u.chat_id ===  r.chat_user_chat_reference.id && u.chat_user_chat_reference.type === ChatEnum.DIRECT) ? u.chat_user_user_reference.picture : r.chat_user_chat_reference.picture),
 			})),
 		};
 	}
@@ -216,25 +217,27 @@ export class ChatsService {
 		try {
 			const res = await this.conn.chat_user.findFirstOrThrow({
 				where: {user_id: userId, chat_id: chatId},
-				select: {chat_user_chat_reference: {select: {name: true, id: true, type: true, dm_key: true}}},
+				select: {chat_user_chat_reference: {select: {name: true, id: true, type: true, dm_key: true, picture: true}}},
 			});
 			if (res.chat_user_chat_reference.type === ChatEnum.DIRECT) {
 				const spl = res.chat_user_chat_reference.dm_key!.split(":");
 				const ind = spl.findIndex(i => i === userId.toString()) === 0 ? 1 : 0;
 				const user = await this.conn.chat_user.findFirst({
 					where: {user_id: userId, chat_id: chatId},
-					select: { display_username: true }
+					select: { display_username: true, chat_user_user_reference: { select: {picture: true} } }
 				})
 				return {
 					name: user?.display_username,
 					id: res?.chat_user_chat_reference.id.toString(),
 					type: res.chat_user_chat_reference.type,
+					picture: user?.chat_user_user_reference.picture,
 				};
 			}
 			return {
 				name: res?.chat_user_chat_reference.name,
 				id: res?.chat_user_chat_reference.id.toString(),
 				type: res.chat_user_chat_reference.type,
+				picture: res.chat_user_chat_reference.picture,
 			};
 		} catch (err) {
 			if (err instanceof Prisma.PrismaClientKnownRequestError) {
@@ -284,9 +287,9 @@ export class ChatsService {
 	async getMembers(chatId: bigint) {
 		const userRows = await this.conn.chat_user.findMany({
 			where: { chat_id: chatId },
-			select: { privilage: true, chat_user_user_reference: { select: { id: true, username: true } } }
+			select: { privilage: true, chat_user_user_reference: { select: { id: true, username: true, picture: true } } }
 		})
-		return userRows.map(r => ({id: r.chat_user_user_reference.id.toString(), username: r.chat_user_user_reference.username, privilage: r.privilage}));
+		return userRows.map(r => ({id: r.chat_user_user_reference.id.toString(), username: r.chat_user_user_reference.username, privilage: r.privilage, picture: r.chat_user_user_reference.picture}));
 	}
 
 	async createMembers(userId: bigint, targetIds: bigint[], chatId: bigint) {

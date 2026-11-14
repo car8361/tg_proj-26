@@ -2,11 +2,12 @@ import {type ReactNode, useEffect, useState} from "react";
 import {useNavigate, useSearchParams} from "react-router";
 import type {Types} from "../types/types.ts";
 import {queryClient} from "../queryClient.ts";
-import {Plus, UsersRound, X, MessagesCircle} from "lucide-react";
+import {Plus, UsersRound, X, MessagesCircle, Settings} from "lucide-react";
 import {ChatType} from "../queries/utils.ts";
 import {useMutationChat, useMutationDeleteChat, useQueryChats} from "../queries/chats/queries.ts";
 import Chats from "./Chats.tsx";
 import Friends from "./Friends.tsx"
+import {useQueryMe} from "../queries/me/queries.ts";
 
 function AppPanel({children} : { children?: ReactNode }) {
 	const navigate = useNavigate();
@@ -28,6 +29,8 @@ function AppPanel({children} : { children?: ReactNode }) {
 	const chatMut = useMutationChat();
 	const chats = useQueryChats();
 	const chatDeleteMut = useMutationDeleteChat();
+	const user = useQueryMe();
+	console.log("USER DATA", user.data);
 
 	return (
 		<div className="flex flex-1 min-h-0">
@@ -71,7 +74,11 @@ function AppPanel({children} : { children?: ReactNode }) {
 						)
 					}
 				</div>
-				<div className="shrink-0 h-[5vh]">Hi</div>
+				<div className="shrink-0 h-[5vh] bg-gray-200 flex flex-row items-center justify-between">
+					<img className="border z-2 rounded-full h-[100%] aspect-square" src={user.data?.picture} alt="HI" />
+					<p className="text-2xl">{user.data?.username}</p>
+					<Settings className="cursor-pointer text-black hover:text-gray-500 transition-colors duration-300" width={40} height={40} />
+				</div>
 			</div>
 			{chatId ? (
 				<Chats chatId={chatId} />

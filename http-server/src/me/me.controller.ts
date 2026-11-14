@@ -12,7 +12,9 @@ export class MeController {
 
   @Get("/")
   async getMe(@SessionUserId() userId: bigint) {
-    return await this.meService.getMe(userId);
+    const result = await this.meService.getMe(userId);
+    console.log("SERVICE RESULT: ", result, "\n\n\n\n\n");
+    return result;
   }
 
   @Patch("/")

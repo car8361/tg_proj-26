@@ -8,7 +8,7 @@ import {
 	useQueryChatUserPrivilages
 } from "../queries/chats/queries.ts";
 
-import {Check, Plus, UsersRound, X} from "lucide-react";
+import {Check, Plus, UsersRound, X, SendHorizontal} from "lucide-react";
 import {useState} from "react";
 import {useQueryFriends} from "../queries/relations/queries.ts";
 import type {GetChatMembers, GetFriends} from "../types/types.ts";
@@ -17,6 +17,7 @@ import {ChatType} from "../queries/utils.ts";
 function Chats({chatId} : {chatId: string}) {
 	const [membersOpen, setMembersOpen] = useState(false);
 	const [chatName, setChatName] = useState<string | null>(null);
+	const [inputValue, setInputValue] = useState<string>("");
 
 	const chatData = useQueryChat(chatId);
 	const chatMembers = useQueryChatMembers(chatId);
@@ -70,7 +71,7 @@ function Chats({chatId} : {chatId: string}) {
 									<>
 										<div className="flex flex-row gap-4 items-center">
 											<p className="text-2xl">{m.username}</p>
-											<p className="text-xl">{m.created_at}</p>
+											<p className="text-xl">{normalDate(m.created_at)}</p>
 										</div>
 										<p>{m.msg}</p>
 									</>
@@ -78,20 +79,35 @@ function Chats({chatId} : {chatId: string}) {
 									<div>No messages found.</div>
 								)}
 							</div>
-							<input className="border border-black" placeholder="Type text here, then press enter" onKeyDown={(e) => {
-								if (e.key === "Enter") {
-									if (e.currentTarget.value.length === 0 || !chatId) {
-										console.log("RETURN MESS")
+							<div className="border flex flex-row items-center text-2xl">
+								<Plus className="transition-colors transition-duration-300 cursor-pointer hover:text-gray-400" width={40} height={40} />
+								<input className="flex-1 h-full focus:outline-none" placeholder="Hello, world!" onChange={(e) => setInputValue(e.currentTarget.value)} onKeyDown={(e) => {
+									if (e.key === "Enter") {
+										if (e.currentTarget.value.length === 0 || !chatId) {
+											console.log("RETURN MESS")
+											return;
+										}
+										sendMessageMut.mutate({chatId, message: e.currentTarget.value});
+									}
+								}}/>
+								<SendHorizontal className="transition-colors transition-duration-300 cursor-pointer hover:text-gray-400" width={40} height={40}
+								onClick={(e) => {
+									if (inputValue.length === 0 || !chatId) {
 										return;
 									}
-									sendMessageMut.mutate({chatId, message: e.currentTarget.value});
-								}
-							}}/>
+									sendMessageMut.mutate({chatId, message: inputValue});
+								}}
+									/>
+							</div>
 						</div>
 					</div>
 			)}
 		</div>
 	)
+}
+
+function normalDate(date: string) {
+	return date.split('.')[0].replace(/-/g, ".").replace(/T/, " ");
 }
 
 function AddMemberDiv({chatId, userFriends, chatMembers, setOpen} : {chatId: string, userFriends: GetFriends | undefined, chatMembers: GetChatMembers | undefined, setOpen: React.Dispatch<React.SetStateAction<boolean>>}) {
