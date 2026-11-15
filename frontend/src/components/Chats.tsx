@@ -1,5 +1,5 @@
 import {
-	useMutationAddMembers, useMutationDeleteMessage, useMutationPatchMessage,
+	useMutationAddMembers, useMutationChatPicture, useMutationDeleteMessage, useMutationPatchMessage,
 	useMutationSendMessage,
 	useMutationUpdChat,
 	useQueryChat,
@@ -9,7 +9,7 @@ import {
 } from "../queries/chats/queries.ts";
 
 import {Check, Plus, UsersRound, X, SendHorizontal, Trash, Pencil} from "lucide-react";
-import {useState} from "react";
+import {useRef, useState} from "react";
 import {useQueryFriends} from "../queries/relations/queries.ts";
 import type {GetChatMembers, GetFriends} from "../types/types.ts";
 import {ChatType} from "../queries/utils.ts";
@@ -31,13 +31,29 @@ function Chats({chatId, username} : {chatId: string, username: string | undefine
 	const updChatMut = useMutationUpdChat();
 	const delMessage = useMutationDeleteMessage();
 	const changeMessage = useMutationPatchMessage();
+	const chatPictureMut = useMutationChatPicture();
+	const pictureRef = useRef<HTMLInputElement>(null);
 
 	return (
 		<div className={"flex flex-1 flex-row"}>
 			{chatId !== undefined && (
 					<div className="w-full bg-gray-100 grid grid-rows-[1fr_19fr]">
 						<div className="flex flex-row border border-white text-2xl items-center">
-							<img className="ml-4 rounded-full h-[3vh] aspect-square" src={chatData.data?.chat.picture} alt="img" />
+							<img className={`ml-4 rounded-full h-[3vh] aspect-square ${chatData.data?.chat.type === ChatType.GROUP && " cursor-pointer hover:opacity-[0.8]"}`} src={chatData.data?.chat.picture}
+							     onClick={() =>  {
+									if (chatData.data?.chat.type === ChatType.GROUP) {
+										pictureRef.current?.click();
+									}
+								 }}
+							     alt="img" />
+							<input type="file" className="sr-only" ref={pictureRef}
+								   onChange={(e) => {
+									   if (e.currentTarget.files?.[0] === undefined) { return; }
+									   const form = new FormData();
+									   form.append("file", e.currentTarget.files[0])
+									   chatPictureMut.mutate({form, chatId});
+								   }}
+							/>
 							{(userChatPrivelages.data?.privilage === "OWNER" || userChatPrivelages.data?.privilage === "ADMIN") ? (
 								<input className="text-2xl outline-none hover:outline-none grid items-center p-2 rounded-bl-2xl transition-colors hover:text-gray-400"
 									   value={chatName !== null ? chatName : chatData.data?.chat.name } onChange={(e) => {setChatName(e.currentTarget.value)}}

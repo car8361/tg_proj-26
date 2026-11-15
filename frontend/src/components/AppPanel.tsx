@@ -1,4 +1,4 @@
-import {type ReactNode, useEffect, useState} from "react";
+import {type ReactNode, useEffect, useRef, useState} from "react";
 import {useNavigate, useSearchParams} from "react-router";
 import type {Types} from "../types/types.ts";
 import {queryClient} from "../queryClient.ts";
@@ -7,7 +7,8 @@ import {ChatType} from "../queries/utils.ts";
 import {useMutationChat, useMutationDeleteChat, useQueryChats} from "../queries/chats/queries.ts";
 import Chats from "./Chats.tsx";
 import Friends from "./Friends.tsx"
-import {useQueryMe} from "../queries/me/queries.ts";
+import {useMutationPicture, useQueryMe} from "../queries/me/queries.ts";
+import type { GetMe } from "../types/types.ts"
 
 function AppPanel({children} : { children?: ReactNode }) {
 	const navigate = useNavigate();
@@ -69,8 +70,8 @@ function AppPanel({children} : { children?: ReactNode }) {
 					<p className="text-2xl">{user.data?.username}</p>
 					<Settings className="cursor-pointer text-black hover:text-gray-500 transition-colors duration-100 cursor-pointer" width={40} height={40}
 					          onClick={() => setEditProfile(true)}/>
-					{editProfile && (
-						<EditProfile setFalse={setEditProfile}/>
+					{editProfile && user.data && (
+						<EditProfile setFalse={setEditProfile} meData={user.data}/>
 					)}
 				</div>
 			</div>
@@ -83,9 +84,14 @@ function AppPanel({children} : { children?: ReactNode }) {
 	)
 }
 
-function EditProfile({setFalse} : {setFalse: React.Dispatch<React.SetStateAction<boolean>>}) {
+function EditProfile({setFalse, meData} : {setFalse: React.Dispatch<React.SetStateAction<boolean>>, meData: GetMe}) {
+	const [presigned, setPresigned] = useState<string | null>(null);
+	const imageRef = useRef<HTMLInputElement>(null);
+
+	const uploadPicture = useMutationPicture();
+
 	return (
-		<div className="fixed flex flex-col items-center text-2xl top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] w-[50vw] h-[50vh] bg-white border rounded-2xl">
+		<div className="z-2 overflow-y-scroll fixed flex flex-col items-center text-2xl top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] w-[50vw] h-[50vh] bg-white border rounded-2xl">
 			<div className="w-full">
 				<div className={"w-fit rounded-full ml-auto bg-transparent transition-colors duration-100 hover:bg-gray-100 cursor-pointer"}>
 					<X className="text-black hover:text-gray-500" width={40} height={40} onClick={() => setFalse(false)} />
@@ -94,8 +100,20 @@ function EditProfile({setFalse} : {setFalse: React.Dispatch<React.SetStateAction
 			<div className="w-[80%] flex flex-col gap-4">
 				<h2 className="mx-auto text-5xl">Profile settings</h2>
 				<p>Profile picture:</p>
+				<img src={meData.picture} alt="img" className="rounded-full w-[5vw]  aspect-square cursor-pointer hover:opacity-[0.8]" onClick={() => imageRef.current?.click()} />
+				<input type="file" accept="image/*" ref={imageRef} placeholder={"HI"}
+					   onChange={(e) => {
+							const file = e.currentTarget.files?.[0];
+							if (!file) return;
+							const form = new FormData();
+							form.append("file", file);
+							uploadPicture.mutate(form);
+					   }}
+				/>
 				<p>Display name:</p>
+				<input value={meData.display_name} />
 				<p>Description:</p>
+				<input value={meData.description ?? "No description"} />
 				<h2 className="mx-auto text-5xl">Account settings</h2>
 				<p>Username: </p>
 				<p>E-mail: </p>

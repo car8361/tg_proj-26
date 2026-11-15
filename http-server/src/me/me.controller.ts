@@ -23,10 +23,10 @@ export class MeController {
   }
 
   @Post("/picture")
-  async uploadMe(@SessionUserId() userId: bigint, @Body() body: PostPictureDto) {
-    const {url, path} = await this.objectService.uploadImage(body.fileType);
+  async uploadMe(@SessionUserId() userId: bigint) {
+    const {url, path} = await this.objectService.uploadImage("pfp/");
     await this.meService.savePicture(userId, path);
-    return url;
+    return JSON.stringify({url: url});
   }
 
   @Delete()

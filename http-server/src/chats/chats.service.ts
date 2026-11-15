@@ -391,6 +391,13 @@ export class ChatsService {
 		return result!.privilage;
 	}
 
+	async changeImage(chatId: bigint, path: string) {
+		await this.conn.chat.update({
+			where: {id: chatId},
+			data: {picture: path}
+		})
+	}
+
 	private usersRowToEmitField(rowsUserIds: { user_id: bigint }[]) {
 		let roomIds = [];
 		console.log("UsersRowToEmitField RECEIVER: ", rowsUserIds);

@@ -16,7 +16,14 @@
 - **chats** - chats, messages, adding people to chats..
 - **auth** - login, register..
 
-**LATEST Terra week 3**
+**LATEST Terra W4**
+- You can DM now
+- You can change your profile picture
+- You can change or delete your messages
+- slight UI changes (will have to be remade in the future)
+- debugging and more
+
+LATEST Terra week 3
 - Reworked frontend UI
 - Reworked some backend chat logic (sadly DMs will be next week)
 - Started researching about presigned URLs (will have to rewrite slightly object service)

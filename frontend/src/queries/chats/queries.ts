@@ -235,3 +235,33 @@ export const useMutationPatchMessage = () => useMutation({
 		location.reload();
 	}
 })
+
+export const useMutationChatPicture = () => useMutation({
+	mutationFn: async ({form, chatId} : {form: FormData, chatId: string}) => {
+		const value = form.get("file");
+		const file = value instanceof File ? value : null;
+		if (file === null) { return; }
+		const res = await fetch(`/api/chats/${chatId}/picture`, {
+			method: "PATCH",
+			credentials: "include",
+		})
+		if (!res.ok) {
+			throw new Error(statusWithMessage[res.status] ?? "Failed to fetch data");
+		}
+
+		const data = await res.json();
+
+		const url = data.url;
+		const resCf = await fetch(url, {
+			method: "PUT",
+			headers: {"Content-Type": file.type},
+			body: file
+		})
+		if (!resCf.ok) {
+			throw new Error(statusWithMessage[res.status] ?? "Failed to fetch data");
+		}
+	},
+	onSuccess: async (res, {chatId}) => {
+		location.reload();
+	}
+})

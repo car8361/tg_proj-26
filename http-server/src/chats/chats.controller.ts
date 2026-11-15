@@ -13,12 +13,13 @@ import {SessionVerified} from "../auth/auth.guard.js";
 import {SessionUserId} from "../common/decorators/session-user-id/session-user-id.decorator.js";
 import {ParseBigintPipe} from "../common/decorators/parse-bigint-pipe/parse-bigint-pipe.decorator.js";
 import {SessionUsername} from "../common/decorators/session-username/session-username.decorator.js";
-import type { Response, Request } from "express";
+import type { Request } from "express";
+import {ObjectService} from "../object/object.service.js";
 
 @Controller('chats')
 @UseGuards(SessionVerified)
 export class ChatsController {
-  constructor(private readonly chatsService: ChatsService) {}
+  constructor(private readonly chatsService: ChatsService, private readonly objectService: ObjectService) {}
 
   @Post("/:chatId/messages") //CHANGED - chatId removed from params, old enpoint: "/:chatId/messages"
   @HttpCode(201)
@@ -153,5 +154,13 @@ export class ChatsController {
   async getUserPrivilages(@SessionUserId() userId: bigint, @Param('chatId', ParseBigintPipe) chatId: bigint) {
     const privilage = await this.chatsService.getChatUserPrivilages(userId, chatId);
     return {success: true, privilage};
+  }
+
+  @Patch("/:chatId/picture")
+  @HttpCode(200)
+  async patchChatPicture(@Param("chatId", ParseBigintPipe) chatId: bigint) {
+    const {url, path} = await this.objectService.uploadImage("grouppicture/");
+    await this.chatsService.changeImage(chatId, path);
+    return {url: url};
   }
 }
