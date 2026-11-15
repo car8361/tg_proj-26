@@ -199,3 +199,39 @@ export const useMutationUpdChat = () => useMutation({
 		return res.json();
 	}
 });
+
+export const useMutationDeleteMessage = () => useMutation({
+	mutationFn: async ({messageId, chatId} : {messageId: string, chatId: string}) => {
+		const res = await fetch(`/api/chats/messages/${messageId}`, {
+			method: "DELETE",
+			credentials: "include",
+		})
+		if (!res.ok) {
+			throw new Error(statusWithMessage[res.status] ?? "Failed to fetch data");
+		}
+		return res;
+	},
+	onSuccess: async (res, {chatId}) => {
+		await queryClient.invalidateQueries({queryKey: ["chat_messages", chatId]});
+		location.reload();
+	}
+})
+
+export const useMutationPatchMessage = () => useMutation({
+	mutationFn: async ({messageId, chatId, message} : {messageId: string, chatId: string, message: string}) => {
+		const res = await fetch(`/api/chats/messages/${messageId}`, {
+			method: "PATCH",
+			credentials: "include",
+			headers: {"Content-Type": "application/json"},
+			body: JSON.stringify({message: message})
+		})
+		if (!res.ok) {
+			throw new Error(statusWithMessage[res.status] ?? "Failed to fetch data");
+		}
+		return res;
+	},
+	onSuccess: async (res, {chatId}) => {
+		await queryClient.invalidateQueries({queryKey: ["chat_messages", chatId]});
+		location.reload();
+	}
+})

@@ -1,5 +1,5 @@
 import {
-	useMutationAddMembers,
+	useMutationAddMembers, useMutationDeleteMessage, useMutationPatchMessage,
 	useMutationSendMessage,
 	useMutationUpdChat,
 	useQueryChat,
@@ -8,16 +8,19 @@ import {
 	useQueryChatUserPrivilages
 } from "../queries/chats/queries.ts";
 
-import {Check, Plus, UsersRound, X, SendHorizontal} from "lucide-react";
+import {Check, Plus, UsersRound, X, SendHorizontal, Trash, Pencil} from "lucide-react";
 import {useState} from "react";
 import {useQueryFriends} from "../queries/relations/queries.ts";
 import type {GetChatMembers, GetFriends} from "../types/types.ts";
 import {ChatType} from "../queries/utils.ts";
 
-function Chats({chatId} : {chatId: string}) {
+function Chats({chatId, username} : {chatId: string, username: string | undefined}) {
 	const [membersOpen, setMembersOpen] = useState(false);
 	const [chatName, setChatName] = useState<string | null>(null);
 	const [inputValue, setInputValue] = useState<string>("");
+	const [msgHovering, setMsgHovering] = useState<number>(-1);
+	const [editingId, setEditingId] = useState(-1);
+	const [editingValue, setEditingValue] = useState<string>("");
 
 	const chatData = useQueryChat(chatId);
 	const chatMembers = useQueryChatMembers(chatId);
@@ -26,6 +29,8 @@ function Chats({chatId} : {chatId: string}) {
 	const userChatPrivelages = useQueryChatUserPrivilages(chatId);
 	const userFriends = useQueryFriends();
 	const updChatMut = useMutationUpdChat();
+	const delMessage = useMutationDeleteMessage();
+	const changeMessage = useMutationPatchMessage();
 
 	return (
 		<div className={"flex flex-1 flex-row"}>
@@ -79,13 +84,33 @@ function Chats({chatId} : {chatId: string}) {
 							</div>
 							<div className="col-[1] w-full overflow-y-scroll wrap-break-word text-2xl">
 								{(chatMessages.data && chatMessages.data?.messages.length > 0) ? (chatMessages.data?.messages.map((m, i) => (
-									<div className="hover:bg-gray-200">
-										<div className="ml-4 flex flex-row gap-4 items-center ">
+									<div className="hover:bg-gray-200 relative"
+										 onMouseEnter={() => setMsgHovering(i)}
+										 onMouseLeave={() => setMsgHovering(-1)}
+									>
+										<div className="ml-4 flex flex-row gap-4 items-center">
 											<img src={m.picture} alt="img" className="mt-4 border rounded-full h-[3vh]" />
 											<p className="text-2xl mt-auto">{m.display_name}</p>
 											<p className="text-xl mt-auto">{normalDate(m.created_at)}</p>
 										</div>
-										<p className="ml-6 mt-4">{m.msg}</p>
+										{editingId === i ? (
+											<input autoFocus className="ml-6 mt-4 outline-none w-[90%]" value={editingValue}
+												   onKeyDown={(e) => {
+													   if (e.key === "Enter") {
+														   changeMessage.mutate({messageId: m.id, chatId: m.chat_id, message: editingValue})
+													   }
+												   }}
+												   onChange={(e) => setEditingValue(e.currentTarget.value)}/>
+										) : (
+											<p className="ml-6 mt-4">{m.msg}</p>
+										)}
+										{(msgHovering === i && m.username === username) && (
+											<>
+												<Pencil className={"absolute right-15 top-5 cursor-pointer hover:text-gray-500"} width={30} height={30} onClick={() => {setEditingId(i); setEditingValue(m.msg)}}/>
+
+												<Trash className={"absolute right-5 top-5 cursor-pointer hover:text-gray-500"} width={30} height={30} onClick={() => delMessage.mutate({messageId: m.id, chatId: m.chat_id})} />
+											</>
+											)}
 									</div>
 								))) : (
 									<div>No messages found.</div>

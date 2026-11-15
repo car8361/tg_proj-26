@@ -23,6 +23,8 @@ export class IsMessageOwner implements CanActivate {
 		const messageId = req.params.messageId;
 		const {userId, verified} = req.session;
 
+		console.log("SERVER GOT:\nmessageId: ", messageId, "\nverified: ", verified);
+
 		if (!messageId || !verified) {
 			return false;
 		}
@@ -36,7 +38,7 @@ export class IsMessageOwner implements CanActivate {
 			return false;
 		}
 
-		return cmd.user_id === userId;
+		return cmd.user_id === BigInt(userId);
 	}
 }
 

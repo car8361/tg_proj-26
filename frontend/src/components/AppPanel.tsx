@@ -75,7 +75,7 @@ function AppPanel({children} : { children?: ReactNode }) {
 				</div>
 			</div>
 			{chatId ? (
-				<Chats chatId={chatId} />
+				<Chats chatId={chatId} username={auth?.username} />
 			) : (
 				<Friends />
 			)}
