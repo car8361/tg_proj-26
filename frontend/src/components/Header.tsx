@@ -3,6 +3,8 @@ import {useState} from "react";
 import {useNavigate} from "react-router";
 import type { Types } from "../types/types.ts";
 import {useMutationDeleteAccount, useMutationLogout} from "../queries/auth/queries.ts";
+import { House, Webhook, MessageSquareMore } from "lucide-react";
+import {useFloating, autoUpdate, offset, shift} from '@floating-ui/react';
 
 function Header() {
 	const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -16,27 +18,49 @@ function Header() {
 		}
 	});
 
+	const {refs, floatingStyles} = useFloating({
+		whileElementsMounted: autoUpdate,
+		placement: "bottom",
+		middleware: [
+			offset(8),
+			shift({ padding: 0 })
+		]
+	});
+
 	return (
-		<header className="flex items-center justify-center left-0 bottom-0 bg-black w-full text-white p-5">
-			<p className="mr-auto">My app</p>
-			<nav className="flex mr-auto gap-4">
-				<a href="/home">Home</a>
-				<a href="/api">API - swagger</a>
+		<header className={`
+			flex flex-row justify-between items-center
+			sticky left-0 bottom-0
+			bg-digital-600 w-full text-white
+			h-[5dvh]
+			min-h-[50px]
+			lg:text-2xl
+		`}>
+			<p className="ml-2 font-bold lg:ml-8">My app</p>
+			<nav className="flex flex-1 m-5 gap-4 justify-center">
+				<a href="/home" className="p-2 transition-all duration-150 hover:text-digital-100 cursor-pointer hover:translate-x-2">
+					<House aria-hidden="true" className="lg:size-10" />
+				</a>
+				<a href="/api" className="p-2 transition-all duration-150 hover:text-digital-100 cursor-pointer hover:translate-x-2">
+					<Webhook className="lg:size-10" />
+				</a>
 				{data.userId && (
-					<a href="/app">App</a>
+					<a href="/app" className="p-2 transition-all duration-150 hover:text-digital-100 cursor-pointer hover:translate-x-2">
+						<MessageSquareMore />
+					</a>
 				)}
 			</nav>
-			<p className="cursor-pointer" onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}>Logged in as: {data?.username ?? "Guest"}</p>
-			<div className="relative">
+			<div className="relative mr-2 lg:mr-8">
+				<button ref={refs.setReference} className="cursor-pointer font-bold" onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}>{data?.username ?? "Guest"}</button>
 				{isUserMenuOpen && (
-					<UserMenu/>
+					<UserMenu menuRef={refs.setFloating} style={floatingStyles} />
 				)}
 			</div>
 		</header>
 	)
 }
 
-function UserMenu() {
+function UserMenu({menuRef, style} : {menuRef: (node: HTMLElement | null) => void, style: React.CSSProperties}) {
 	const navigate = useNavigate();
 
 	const {data} = useSuspenseQuery<Types>({
@@ -63,20 +87,29 @@ function UserMenu() {
 	}
 
 	return (
-		<div id="header-user-menu-div">
-			<div className="absolute mt-5 bg-white border border-black top-full right-0 px-5 rounded-2xl">
+		<ol ref={menuRef} style={style} className="bg-white p-1 absolute flex flex-col z-10  rounded-2xl border text-center">
 			{data.userId ?
 				(Object.entries(loggedInButtons).map(([name, func]) => <Button name={name} func={func}></Button>))
 				:
 				(Object.entries(loggedOutButtons).map(([name, func]) => <Button name={name} func={func}></Button>))
 			}
-			</div>
-		</div>
+		</ol>
 	)
 }
 
 function Button({name, func} : { name: string, func: () => void }) {
-	return (<button className="text-black my-4 cursor-pointer hover:text-gray-500" onClick={func}>{name}</button>)
+	return (
+		<li className={`
+			w-full
+		`}>
+			<button className={`
+				bg-digital-500 hover:bg-digital-400
+				cursor-pointer
+				text-white font-bold p-2 rounded-lg
+				transition-all hover:-translate-x-1 duration-150
+		`} onClick={func}>{name}</button>
+		</li>
+			)
 }
 
 export default Header;

@@ -1,1 +1,23 @@
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap");
+
 @import "tailwindcss";
+
+@theme {
+    --font-mono: "Jetbrains Mono", monospace;
+
+    --color-digital-50: #E5F0FF;
+    --color-digital-100: #CCE0FF;
+    --color-digital-200: #99C2FF;
+    --color-digital-300: #66A3FF;
+    --color-digital-400: #3385FF;
+    --color-digital-500: #0066FF;
+    --color-digital-600: #0052CC;
+    --color-digital-700: #003D99;
+    --color-digital-800: #002966;
+    --color-digital-900: #001433;
+    --color-digital-950: #000E24;
+
+}
+
+@custom-variant hover (&:hover);
+@custom-variant group-hover (.group:hover &);

@@ -1,5 +1,3 @@
-import Input from "../components/authInput";
-import { LoginZod } from "../types/types.ts";
 import {useMutationLogin} from "../queries/auth/queries.ts";
 import {useState} from "react";
 
@@ -7,31 +5,50 @@ function Login() {
     const [errMsg, setErrMsg] = useState("");
     const loginMut = useMutationLogin(setErrMsg);
 
-    /*const Login = (event: React.SubmitEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        const userInputs = Object.fromEntries(new FormData(event.currentTarget));
-        fetch("/api/auth/login", {
-            method: "POST",
-            headers: {"Content-Type": "application/Json"},
-            body: JSON.stringify(userInputs),
-            credentials: "include",
-        })
-        .then(res => {
-            const status = Number(res.status);
-            if (status >= 200 && status <= 299) {
-                queryClient.invalidateQueries({ queryKey: ["auth"] })
-                navigate("/")
-            }
-            if (status >= 400 && status < 500) {
-                setErrMsg("Incorrect login details");
-            } else if (status >= 500) {
-                setErrMsg("Server error")
-            }
-        })
-    }*/
+    function formSubmit(e: React.SubmitEvent<HTMLFormElement>) {
+        e.preventDefault();
+        const data = new FormData(e.target);
+        loginMut.mutate({
+            identifier: String(data.get("identifier")),
+            password: String(data.get("password"))
+        });
+    }
 
     return (
-        <div className="flex m-auto items-center justify-center p-4 w-full md:portrait:items-start md:portrait:pt-40">
+        <form className={`flex flex-col w-[60%] mx-auto my-auto max-w-[500px] gap-2 lg:text-3xl`}
+              onSubmit={formSubmit}
+        >
+            <h1 className="font-bold text-digital-500 font-bold text-center text-2xl lg:text-5xl sm:mb-5 lg:mb-10">Chat Login</h1>
+            <div className="flex flex-col">
+                <label htmlFor="input-login-username" className={`font-bold text-digital-500`}>Username or E-mail</label>
+                <input id="input-login-username"
+                       name="identifier"
+                       placeholder="username123"
+                       className={`
+                       transition-all hover:bg-digital-50 duration-75 border border-digital-300 rounded-md px-2 py-[1px]
+                       `} />
+            </div>
+            <div className="flex flex-col">
+                <label htmlFor="input-login-username" className={`font-bold text-digital-500`}>Password</label>
+                <input id="input-login-username" type="password"
+                       name="password"
+                       placeholder="●●●●●●●●●●"
+                       className={`
+                       transition-all hover:bg-digital-50 duration-75 border border-digital-300 rounded-md px-2 py-[1px]
+                       `}    />
+            </div>
+            <button className={`
+            transition-all duration-150
+            bg-digital-500 hover:bg-digital-400
+            rounded-md mt-2 font-bold text-white cursor-pointer py-[1px] leading-normal
+            `}>Login</button>
+            <a href="/register" className="transition-colors mt-1 text-digital-400 justify-end hover:text-digital-300">Don't have an account yet?</a>
+        </form>
+    )
+}
+
+/*
+<h1>Login</h1>
             <form onSubmit={(e) => { e.preventDefault(); const data = LoginZod.parse(Object.fromEntries(new FormData(e.target))); loginMut.mutate(data);}} className="flex flex-col w-full max-w-lg rounded-xl">
                 <Input name="identifier" id="identifier" label="Name or E-mail" parameters="" placeholder="username" type="text" errMsg=""/>
                 <Input name="password" id="password" label="Password" parameters="" placeholder="●●●●●●●●" type="password" errMsg=""/>
@@ -41,8 +58,6 @@ function Login() {
                 )}
                 <a href="/register" className="transition-colors mt-1 text-blue-500 justify-end hover:text-blue-300 text-2xl">Don't have an account yet?</a>
             </form>
-        </div>
-    )
-}
+ */
 
 export default Login;

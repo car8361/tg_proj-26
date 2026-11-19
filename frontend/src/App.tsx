@@ -18,6 +18,7 @@ function App() {
 	console.log("Types data: ", data);
 	const showVerifyOverlay = data && data?.userId && data.verified === "false";
 	return (
+		<div>
 		<div className="flex flex-col min-h-0 h-dvh">
 			{ showVerifyOverlay && <VerifyOverlay /> }
 			<Header />
@@ -31,6 +32,8 @@ function App() {
 					<Route path="*" element={<NotFound />}/>
 				</Routes>
 			</main>
+		</div>
+			<Footer />
 		</div>
 	);
 }

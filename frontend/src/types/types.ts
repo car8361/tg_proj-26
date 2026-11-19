@@ -26,11 +26,6 @@ export const RegisterZod = z.object({
 	return true;
 }, { message: "Passwords don't match", path: ["confirmPassword"] })
 
-export const LoginZod = z.object({
-	identifier: z.string(),
-	password: z.string()
-})
-
 export interface Types {
 	userId: string;
 	verified: string;

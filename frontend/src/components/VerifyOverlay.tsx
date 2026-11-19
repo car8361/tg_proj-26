@@ -4,7 +4,66 @@ import {queryClient} from "../queryClient.ts";
 
 
 function VerifyOverlay() {
-	const [target, setTarget] = useState(0);
+	const Mut2Fa = useMutation2fa();
+	const MutLogout = useMutationLogout();
+
+	const { data } = useQueryAuth();
+
+	const [error, setError] = useState<string>("");
+	const [code, setCode] = useState("");
+
+	const verifyCode = (e: React.SubmitEvent<HTMLFormElement>) => {
+		e.preventDefault();
+		const v = String(new FormData(e.currentTarget).get("code"));
+		if (!/^\d{6}$/.test(v)) {
+			console.log(`CODE: ${v}`)
+			return setError("Not a valid code")
+		}
+		Mut2Fa.mutate(code);
+	}
+
+	return (
+		(data && data.userId && data.verified === "false") ? (
+			<div id="verify-overlay-div" className="fixed flex flex-col justify-center items-center border-box bg-black/80 w-full h-full z-10">
+				<div className={`bg-white p-5 rounded-lg`}>
+					<form className="flex flex-col w-80 text-2xl" onSubmit={verifyCode}>
+						<h1 className="font-bold text-digital-500 text-3xl mb-6">We sent you a code!</h1>
+						<input placeholder="6-digit code" name="code" value={code}
+							   className={`
+							   p-1 bg-white w-full outline-none border-l border-b border-digital-500
+							   transition-all
+							   focus:border-l-8
+							   `}
+							onChange={(e) => {
+								const v = e.currentTarget.value;
+								if (!/^\w{0,6}$/.test(v)) {
+									return;
+								}
+								if (!/^\d*$/.test(v)) {
+									return setError("Numbers only");
+								}
+								setError("");
+								return setCode(v);
+							}}
+						/>
+
+						{error.length > 0 && (
+							<p className="m-0 p-0 font-bold text-red-500 self-center">{error}</p>
+						)}
+						<button
+							className="bg-digital-500 font-bold text-white mx-auto leading-normal w-full rounded-2xl p-1 mt-8 cursor-pointer"
+							type="submit"
+						>Submit</button>
+						<button className="text-digital-400 cursor-pointer ml-auto">Resend code</button>
+					</form>
+				</div>
+			</div>
+		) : (<></>)
+	);
+}
+
+/*
+onst [target, setTarget] = useState(0);
 	const [code, setCode] = useState([-1, -1, -1, -1, -1, -1])
 	const allowedKeys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
 
@@ -57,9 +116,10 @@ function VerifyOverlay() {
 		document.addEventListener("keydown", keyListener);
 		return () => document.removeEventListener("keydown", keyListener);
 	}, [target])
+ */
 
-	return (
-		(data && data.userId && data.verified === "false") ? (
+/*
+(data && data.userId && data.verified === "false") ? (
 			<div id="verify-overlay-div" className="fixed flex flex-col justify-center items-center border-box bg-black w-full h-full z-10">
 				<div className={`grid grid-rows-[repeat(3,1fr)] p-10 w-full h-full bg-white`}>
 						<h1 className="row-1 text-black text-3xl lg:text-8xl md:text-5xl mt-auto text-center">Verify your verification code</h1>
@@ -73,7 +133,6 @@ function VerifyOverlay() {
 				</div>
 			</div>
 		) : (<></>)
-	);
-}
+ */
 
 export default VerifyOverlay;
