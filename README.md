@@ -16,7 +16,14 @@
 - **chats** - chats, messages, adding people to chats..
 - **auth** - login, register..
 
-**LATEST Terra W4**
+**LATEST Terra W5**
+- Worked on the UI part (Not finished - will be done next week)
+- Learned new tailwind CSS attributes
+- UI is now phone first! (Changed it to work on PC aswell)
+- Pretty nice UX (Personally before I would NOT use the site, now honestly I would)
+- Would say it was pretty slow but I was remaking the entirity of the code of pages (doesn't look like much then)
+
+Terra W4
 - You can DM now
 - You can change your profile picture
 - You can change or delete your messages
