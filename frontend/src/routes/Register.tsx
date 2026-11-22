@@ -19,6 +19,7 @@ function Login() {
         const result = RegisterZod.safeParse(userInputs);
         console.log("PARSING RESULT DATA: ", result.data);
         if (!result.success) {
+            console.log("PARSING FAIL ", result.error);
             return setErrMsg(result.error.issues[0].message);
         }
         registerMut.mutate(result.data);
@@ -29,6 +30,7 @@ function Login() {
     const inputChanged = (value: string, type: string) => {
         setErrMsg("");
         setUserErr("");
+        setEmailErr("");
         setPassConfErr("");
         setPassErr("");
         clearTimeout(timeout.current);
@@ -94,7 +96,7 @@ function Login() {
             <h1 className="font-bold text-digital-500 font-bold text-center text-2xl lg:text-5xl sm:mb-5 lg:mb-10">Chat Registration</h1>
             <div className="flex flex-col">
                 <label htmlFor="input-login-username" className={`font-bold text-digital-500`}>Username</label>
-                <input id="input-login-username" onChange={(e) => inputChanged(e.currentTarget.value, "username")}
+                <input id="input-login-username" onChange={(e) => inputChanged(e.currentTarget.value, "username")} name="username"
                        className={`
                        transition-all hover:bg-digital-50 duration-75 border border-digital-300 rounded-md px-2 py-[1px]
                        `} />
@@ -104,7 +106,7 @@ function Login() {
             </div>
             <div className="flex flex-col">
                 <label htmlFor="input-login-email" className={`font-bold text-digital-500`}>E-mail</label>
-                <input id="input-login-email" onChange={(e) => inputChanged(e.currentTarget.value, "email")}
+                <input id="input-login-email" onChange={(e) => inputChanged(e.currentTarget.value, "email")} name="email"
                        className={`
                        transition-all hover:bg-digital-50 duration-75 border border-digital-300 rounded-md px-2 py-[1px]
                        `} />
@@ -114,7 +116,7 @@ function Login() {
             </div>
             <div className="flex flex-col">
                 <label htmlFor="input-login-password" className={`font-bold text-digital-500`}>Password</label>
-                <input id="input-login-password" type="password" onChange={(e) => inputChanged(e.currentTarget.value, "password")} className={`
+                <input id="input-login-password" type="password" onChange={(e) => inputChanged(e.currentTarget.value, "password")} name="password" className={`
                        transition-all hover:bg-digital-50 duration-75 border border-digital-300 rounded-md px-2 py-[1px]
                        `}    />
                 {passErr && (
@@ -123,7 +125,7 @@ function Login() {
             </div>
             <div className="flex flex-col">
                 <label htmlFor="input-login-confirm-password" className={`font-bold text-digital-500`}>Confirm password</label>
-                <input id="input-login-confirm-password" type="password"
+                <input id="input-login-confirm-password" type="password" name="confirmPassword"
                        className={`
                        transition-all hover:bg-digital-50 duration-75 border border-digital-300 rounded-md px-2 py-[1px]
                        `} />
