@@ -27,6 +27,7 @@ function Login() {
     const timeout = useRef<number>(undefined);
 
     const inputChanged = (value: string, type: string) => {
+        setErrMsg("");
         setUserErr("");
         setPassConfErr("");
         setPassErr("");
@@ -85,42 +86,59 @@ function Login() {
         }
     }
 
+    const errStyle = "text-red-500 text-lg lg:text-3xl"
+
     return (
-        <form className={`flex flex-col w-[60%] mx-auto my-auto max-w-[500px] gap-2 lg:text-3xl`}
+        <form className={`flex flex-col w-[60%] mx-auto my-auto max-w-[500px] gap-2 lg:text-3xl`} onSubmit={Register}
         >
             <h1 className="font-bold text-digital-500 font-bold text-center text-2xl lg:text-5xl sm:mb-5 lg:mb-10">Chat Registration</h1>
             <div className="flex flex-col">
                 <label htmlFor="input-login-username" className={`font-bold text-digital-500`}>Username</label>
-                <input id="input-login-username"
+                <input id="input-login-username" onChange={(e) => inputChanged(e.currentTarget.value, "username")}
                        className={`
                        transition-all hover:bg-digital-50 duration-75 border border-digital-300 rounded-md px-2 py-[1px]
                        `} />
+                {userErr && (
+                    <p className={errStyle}>{userErr}</p>
+                )}
             </div>
             <div className="flex flex-col">
                 <label htmlFor="input-login-email" className={`font-bold text-digital-500`}>E-mail</label>
-                <input id="input-login-email"
+                <input id="input-login-email" onChange={(e) => inputChanged(e.currentTarget.value, "email")}
                        className={`
                        transition-all hover:bg-digital-50 duration-75 border border-digital-300 rounded-md px-2 py-[1px]
                        `} />
+                {emailErr && (
+                    <p className={errStyle}>{emailErr}</p>
+                )}
             </div>
             <div className="flex flex-col">
                 <label htmlFor="input-login-password" className={`font-bold text-digital-500`}>Password</label>
-                <input id="input-login-password" type="password" className={`
+                <input id="input-login-password" type="password" onChange={(e) => inputChanged(e.currentTarget.value, "password")} className={`
                        transition-all hover:bg-digital-50 duration-75 border border-digital-300 rounded-md px-2 py-[1px]
                        `}    />
+                {passErr && (
+                    <p className={errStyle}>{passErr}</p>
+                )}
             </div>
             <div className="flex flex-col">
                 <label htmlFor="input-login-confirm-password" className={`font-bold text-digital-500`}>Confirm password</label>
-                <input id="input-login-confirm-password"
+                <input id="input-login-confirm-password" type="password"
                        className={`
                        transition-all hover:bg-digital-50 duration-75 border border-digital-300 rounded-md px-2 py-[1px]
                        `} />
+                {passConfErr && (
+                    <p className={errStyle}>{passConfErr}</p>
+                )}
             </div>
             <button className={`
             transition-all duration-150
             bg-digital-500 hover:bg-digital-400
             rounded-md mt-2 font-bold text-white cursor-pointer py-[1px] leading-normal
             `}>Register</button>
+            {errMsg && (
+                <p className={errStyle}>{errMsg}</p>
+            )}
             <a href="/login" className="transition-colors mt-1 text-digital-400 justify-end hover:text-digital-300">Already have an account?</a>
         </form>
     )
