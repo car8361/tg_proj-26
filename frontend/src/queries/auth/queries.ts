@@ -56,6 +56,11 @@ export const useMutation2fa = () => useMutation({
 		}
 		return res;
 	},
+	onSuccess: (res) => {
+		if (res.ok) {
+			location.reload()
+		}
+	}
 })
 
 export const useMutationDeleteAccount = () => useMutation({

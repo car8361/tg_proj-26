@@ -11,7 +11,7 @@ function Footer() {
 		bg-digital-600 w-full text-white font-bold
 		text-[clamp(0.75rem,2.5vw,1rem)]
 		`}>
-			<div className="flex flex-row justify-center gap-4 mx-auto justify-center">
+			<div className="flex flex-1 flex-row justify-center gap-4 mx-auto">
 				{Object.entries(ftl).map(([name, link]) => (
 					<a href={link} className="transition-all duration-150 hover:-translate-y-2">
 						{name}

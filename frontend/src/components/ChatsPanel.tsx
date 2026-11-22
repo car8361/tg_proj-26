@@ -4,7 +4,7 @@ import {
 	useMutationUpdChat,
 	useQueryChat,
 	useQueryChatMembers,
-	useQueryChatMessages,
+	useQueryChatMessages, useQueryChats,
 	useQueryChatUserPrivilages
 } from "../queries/chats/queries.ts";
 
@@ -14,7 +14,7 @@ import {useQueryFriends} from "../queries/relations/queries.ts";
 import type {GetChatMembers, GetFriends} from "../types/types.ts";
 import {ChatType} from "../queries/utils.ts";
 
-function Chats({chatId, username} : {chatId: string, username: string | undefined}) {
+function ChatsPanel({chatId, username} : {chatId: string, username: string | undefined}) {
 	const [membersOpen, setMembersOpen] = useState(false);
 	const [chatName, setChatName] = useState<string | null>(null);
 	const [inputValue, setInputValue] = useState<string>("");
@@ -22,7 +22,107 @@ function Chats({chatId, username} : {chatId: string, username: string | undefine
 	const [editingId, setEditingId] = useState(-1);
 	const [editingValue, setEditingValue] = useState<string>("");
 
-	const chatData = useQueryChat(chatId);
+	const {data: chatsData, isLoading: chatsLoading} = useQueryChats();
+
+
+	return (
+		<div className="flex flex-1 flex-col">
+			<div className={`
+				w-[90%]
+				mx-auto
+			`}>
+				<div className="flex flex-row my-4 bg-digital-50 rounded-lg justify-between">
+					<h2 className={`
+						font-bold text-center text-digital-600 text-4xl
+					`}>Chats</h2>
+					<button className="group">
+						<Plus className="size-10 text-digital-600 group-hover:rotate-10 transition-all duration-150 cursor-pointer" />
+					</button>
+				</div>
+			</div>
+			<div className="flex flex-1 flex-col gap-1 overflow-y-scroll w-[90%] mx-auto">
+				<LoadingChat loading={chatsLoading} length={8}>
+					{chatsData?.chats.map((c, i) => (
+						<div className={`bg-gray-200 rounded-lg px-2 h-20 flex group cursor-pointer`}>
+							<img src={c.picture} className={`h-[90%] rounded-full aspect-square my-auto`} />
+							<p className={`self-center pl-2 text-2xl truncate`}>{c.name}</p>
+							<X className={`my-auto ml-auto mr-2 size-10 text-transparent group-hover:text-black`}/>
+						</div>
+					))}
+				</LoadingChat>
+			</div>
+		</div>
+	)
+}
+
+function LoadingChat({loading, length, children} : {loading: boolean, length: number, children?: React.ReactNode}) {
+	return loading ? (
+		Array.from({length: length}).map((_, i) => (
+			<div className="bg-gradient-to-r from-gray-200 via-digital-100 to-gray-200 h-[10vh] rounded-2xl [background-size:200%_100%] animate-shimmer">
+			</div>
+			))
+	) : (
+		children
+	)
+}
+
+function normalDate(date: string) {
+	return date.split('.')[0].replace(/-/g, ".").replace(/T/, " ");
+}
+
+function AddMemberDiv({chatId, userFriends, chatMembers, setOpen} : {chatId: string, userFriends: GetFriends | undefined, chatMembers: GetChatMembers | undefined, setOpen: React.Dispatch<React.SetStateAction<boolean>>}) {
+	const [addToChatIds, setAddToChatIds] = useState<string[]>([]);
+	const addToChat = useMutationAddMembers();
+
+	return (
+		<div className="fixed left-[50%] top-[50%] translate-[-50%] flex flex-col border border-black rounded-md bg-white w-[20dvw] h-[40dvh] overflow-hidden">
+			<X width="40" height="40" className="absolute top-0 right-0 cursor-pointer" onClick={() => {setOpen(false)}}/>
+			<p className="p-6 text-2xl border-b w-[80%] text-center mx-auto">Add a friend to your chat!</p>
+			<div className="w-[60%] flex-1 overflow-y-scroll mx-auto text-left pt-5">
+				{userFriends && userFriends.friends.map(f => {
+					if (chatMembers && chatMembers.members.find(m => m.username === f.other_username)) {
+						return (<div className="">{f.other_username}<Check className="ml-auto text-black" /></div>)
+					}
+					if (addToChatIds.find(i => i === f.other_id)) {
+						return (
+							<div className="flex flex-row w-full">
+								<p>{f.other_username}</p>
+								<X className="ml-auto cursor-pointer text-black transition-colors hover:text-gray-500"
+								   onClick={() => {
+									   setAddToChatIds(old => old.splice(old.indexOf(f.other_id), 1))
+								   }}
+								/>
+							</div>
+						)
+					}
+					return <div className="flex flex-row w-full">
+						<p>{f.other_username}</p>
+						<Plus className="ml-auto cursor-pointer text-black transition-colors hover:text-gray-500"
+						      onClick={() => {
+								  setAddToChatIds(old => [...old, f.other_id])
+							  }}
+						/>
+					</div>
+				})}
+			</div>
+			<button className={`mt-auto ${addToChatIds.length > 0 ? "bg-blue-500 cursor-pointer" : "bg-blue-400"} w-[98%] rounded-md text-2xl mx-auto mb-1 transition-colors hover:bg-blue-400`}
+				onClick={() => {
+					if (addToChatIds.length === 0) {
+						return;
+					}
+					addToChat.mutate({chatId, targetIds: addToChatIds});
+				}}
+			>
+				<p className="m-auto">Confirm</p>
+			</button>
+		</div>
+	)
+}
+
+export default ChatsPanel;
+
+/*
+const chatData = useQueryChat(chatId);
 	const chatMembers = useQueryChatMembers(chatId);
 	const chatMessages = useQueryChatMessages(chatId);
 	const sendMessageMut = useMutationSendMessage();
@@ -33,10 +133,10 @@ function Chats({chatId, username} : {chatId: string, username: string | undefine
 	const changeMessage = useMutationPatchMessage();
 	const chatPictureMut = useMutationChatPicture();
 	const pictureRef = useRef<HTMLInputElement>(null);
+ */
 
-	return (
-		<div className={"flex flex-1 flex-row"}>
-			{chatId !== undefined && (
+/*
+{(chatId !== undefined && chatData.data?.chat) && (
 					<div className="w-full bg-gray-100 grid grid-rows-[1fr_19fr]">
 						<div className="flex flex-row border border-white text-2xl items-center">
 							<img className={`ml-4 rounded-full h-[3vh] aspect-square ${chatData.data?.chat.type === ChatType.GROUP && " cursor-pointer hover:opacity-[0.8]"}`} src={chatData.data?.chat.picture}
@@ -82,7 +182,7 @@ function Chats({chatId, username} : {chatId: string, username: string | undefine
 									)}
 								</div>
 								{membersOpen && (
-									<AddMemberDiv chatId={chatData.data!.chat.id} chatMembers={chatMembers.data} userFriends={userFriends.data} setOpen={setMembersOpen} />
+									<AddMemberDiv chatId={chatData.data?.chat.id} chatMembers={chatMembers.data} userFriends={userFriends.data} setOpen={setMembersOpen} />
 								)}
 								<div className={"bg-gray-100"}>
 									{chatMembers.data?.members && chatMembers.data?.members.map((m, i) => (
@@ -156,60 +256,4 @@ function Chats({chatId, username} : {chatId: string, username: string | undefine
 					</div>
 			)}
 		</div>
-	)
-}
-
-function normalDate(date: string) {
-	return date.split('.')[0].replace(/-/g, ".").replace(/T/, " ");
-}
-
-function AddMemberDiv({chatId, userFriends, chatMembers, setOpen} : {chatId: string, userFriends: GetFriends | undefined, chatMembers: GetChatMembers | undefined, setOpen: React.Dispatch<React.SetStateAction<boolean>>}) {
-	const [addToChatIds, setAddToChatIds] = useState<string[]>([]);
-	const addToChat = useMutationAddMembers();
-
-	return (
-		<div className="fixed left-[50%] top-[50%] translate-[-50%] flex flex-col border border-black rounded-md bg-white w-[20dvw] h-[40dvh] overflow-hidden">
-			<X width="40" height="40" className="absolute top-0 right-0 cursor-pointer" onClick={() => {setOpen(false)}}/>
-			<p className="p-6 text-2xl border-b w-[80%] text-center mx-auto">Add a friend to your chat!</p>
-			<div className="w-[60%] flex-1 overflow-y-scroll mx-auto text-left pt-5">
-				{userFriends && userFriends.friends.map(f => {
-					if (chatMembers && chatMembers.members.find(m => m.username === f.other_username)) {
-						return (<div className="">{f.other_username}<Check className="ml-auto text-black" /></div>)
-					}
-					if (addToChatIds.find(i => i === f.other_id)) {
-						return (
-							<div className="flex flex-row w-full">
-								<p>{f.other_username}</p>
-								<X className="ml-auto cursor-pointer text-black transition-colors hover:text-gray-500"
-								   onClick={() => {
-									   setAddToChatIds(old => old.splice(old.indexOf(f.other_id), 1))
-								   }}
-								/>
-							</div>
-						)
-					}
-					return <div className="flex flex-row w-full">
-						<p>{f.other_username}</p>
-						<Plus className="ml-auto cursor-pointer text-black transition-colors hover:text-gray-500"
-						      onClick={() => {
-								  setAddToChatIds(old => [...old, f.other_id])
-							  }}
-						/>
-					</div>
-				})}
-			</div>
-			<button className={`mt-auto ${addToChatIds.length > 0 ? "bg-blue-500 cursor-pointer" : "bg-blue-400"} w-[98%] rounded-md text-2xl mx-auto mb-1 transition-colors hover:bg-blue-400`}
-				onClick={() => {
-					if (addToChatIds.length === 0) {
-						return;
-					}
-					addToChat.mutate({chatId, targetIds: addToChatIds});
-				}}
-			>
-				<p className="m-auto">Confirm</p>
-			</button>
-		</div>
-	)
-}
-
-export default Chats;
+ */

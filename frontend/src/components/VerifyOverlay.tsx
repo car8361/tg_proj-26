@@ -25,13 +25,14 @@ function VerifyOverlay() {
 	return (
 		(data && data.userId && data.verified === "false") ? (
 			<div id="verify-overlay-div" className="fixed flex flex-col justify-center items-center border-box bg-black/80 w-full h-full z-10">
-				<div className={`bg-white p-5 rounded-lg`}>
-					<form className="flex flex-col w-80 text-2xl" onSubmit={verifyCode}>
-						<h1 className="font-bold text-digital-500 text-3xl mb-6">We sent you a code!</h1>
+				<div className={`bg-white p-5 rounded-lg w-[90dvw] max-w-[750px]`}>
+					<form className="flex flex-col gap-0 lg:gap-5 w-[100%] text-2xl" onSubmit={verifyCode}>
+						<h1 className="font-bold text-digital-500 text-3xl lg:text-5xl mb-6">We sent you a code!</h1>
 						<input placeholder="6-digit code" name="code" value={code}
 							   className={`
 							   p-1 bg-white w-full outline-none border-l border-b border-digital-500
 							   transition-all
+							   lg:text-4xl
 							   focus:border-l-8
 							   `}
 							onChange={(e) => {
@@ -48,13 +49,16 @@ function VerifyOverlay() {
 						/>
 
 						{error.length > 0 && (
-							<p className="m-0 p-0 font-bold text-red-500 self-center">{error}</p>
+							<p className="m-0 p-0 font-bold text-red-500 self-center lg:text-3xl">{error}</p>
 						)}
 						<button
-							className="bg-digital-500 font-bold text-white mx-auto leading-normal w-full rounded-2xl p-1 mt-8 cursor-pointer"
+							className={`
+							bg-digital-500 font-bold text-white mx-auto leading-normal w-full rounded-2xl p-1 mt-8 cursor-pointer
+							lg:text-3xl hover:bg-digital-400 transition-all duration-150 hover:translate-x-1
+							`}
 							type="submit"
 						>Submit</button>
-						<button className="text-digital-400 cursor-pointer ml-auto">Resend code</button>
+						<button className="text-digital-400 cursor-pointer ml-auto lg:text-3xl">Resend code</button>
 					</form>
 				</div>
 			</div>

@@ -36,22 +36,22 @@ function Header() {
 			min-h-[50px]
 			lg:text-2xl
 		`}>
-			<p className="ml-2 font-bold lg:ml-8">My app</p>
-			<nav className="flex flex-1 m-5 gap-4 justify-center">
+			<p className="ml-2 font-bold lg:ml-8 text-clamp[0.5rem, 2xl, 1rem]">My app</p>
+			<nav className="flex flex-1 m-5 gap-4 xs:gap-2 justify-center">
 				<a href="/home" className="p-2 transition-all duration-150 hover:text-digital-100 cursor-pointer hover:translate-x-2">
-					<House aria-hidden="true" className="lg:size-10" />
+					<House aria-hidden="true" className="lg:size-10 xs:size-1 sm:size-2f" />
 				</a>
 				<a href="/api" className="p-2 transition-all duration-150 hover:text-digital-100 cursor-pointer hover:translate-x-2">
 					<Webhook className="lg:size-10" />
 				</a>
 				{data.userId && (
 					<a href="/app" className="p-2 transition-all duration-150 hover:text-digital-100 cursor-pointer hover:translate-x-2">
-						<MessageSquareMore />
+						<MessageSquareMore className="lg:size-10" />
 					</a>
 				)}
 			</nav>
 			<div className="relative mr-2 lg:mr-8">
-				<button ref={refs.setReference} className="cursor-pointer font-bold" onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}>{data?.username ?? "Guest"}</button>
+				<button ref={refs.setReference} className="cursor-pointer font-bold overflow-hidden text-ellipsis text-nowrap" onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}>{data?.username ?? "Guest"}</button>
 				{isUserMenuOpen && (
 					<UserMenu menuRef={refs.setFloating} style={floatingStyles} />
 				)}
@@ -87,7 +87,7 @@ function UserMenu({menuRef, style} : {menuRef: (node: HTMLElement | null) => voi
 	}
 
 	return (
-		<ol ref={menuRef} style={style} className="bg-white p-1 absolute flex flex-col z-10  rounded-2xl border text-center">
+		<ol ref={menuRef} style={style} className="bg-white p-1 absolute flex flex-col z-10 gap-1  rounded-2xl border text-center">
 			{data.userId ?
 				(Object.entries(loggedInButtons).map(([name, func]) => <Button name={name} func={func}></Button>))
 				:
@@ -107,6 +107,8 @@ function Button({name, func} : { name: string, func: () => void }) {
 				cursor-pointer
 				text-white font-bold p-2 rounded-lg
 				transition-all hover:-translate-x-1 duration-150
+				text-nowrap
+				w-full
 		`} onClick={func}>{name}</button>
 		</li>
 			)

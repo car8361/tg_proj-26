@@ -2,10 +2,10 @@ import {type ReactNode, useEffect, useRef, useState} from "react";
 import {useNavigate, useSearchParams} from "react-router";
 import type {Types} from "../types/types.ts";
 import {queryClient} from "../queryClient.ts";
-import {Plus, UsersRound, X, MessagesCircle, Settings} from "lucide-react";
+import {Plus, UsersRound, X, MessagesCircle, Settings, type LucideIcon, CircleUserRound} from "lucide-react";
 import {ChatType} from "../queries/utils.ts";
 import {useMutationChat, useMutationDeleteChat, useQueryChats} from "../queries/chats/queries.ts";
-import Chats from "./Chats.tsx";
+import Chats from "./ChatsPanel.tsx";
 import Friends from "./Friends.tsx"
 import {useMutationPicture, useQueryMe} from "../queries/me/queries.ts";
 import type { GetMe } from "../types/types.ts"
@@ -14,9 +14,6 @@ function AppPanel({children} : { children?: ReactNode }) {
 	const navigate = useNavigate();
 	const [auth, setAuth] = useState<Types | undefined>(undefined);
 	const [searchParams, setSearchParams] = useSearchParams();
-	const [hoveringChatId, setHoveringChatId] = useState<number>();
-	const [currentChatId, setCurrentChatId] = useState<number>(-1);
-	const [editProfile, setEditProfile] = useState<boolean>(false);
 
 	const chatId = searchParams.get('chatId');
 
@@ -34,53 +31,46 @@ function AppPanel({children} : { children?: ReactNode }) {
 	const user = useQueryMe();
 	console.log("USER DATA", user.data);
 
+	const [activePage, setActivePage] = useState(1);
+
+	const navIconToNode = [
+		{icon: CircleUserRound, content: <div /> },
+		{ icon: UsersRound, content: <Friends /> },
+		{ icon: MessagesCircle, content: <Chats chatId={chatId?.toString() ?? ""} username={auth?.username ?? ""} /> }
+	]
+
 	return (
 		<div className="flex flex-1 min-h-0">
-			<div className="flex w-fit flex-col bg-gray-100">
-				<div className="flex flex-col transition-colors">
-					<button
-						className={"cursor-pointer flex flex-row text-2xl p-2 w-full justify-left"}
-						onMouseEnter={(e) => {e.currentTarget.style.backgroundColor = "#F2F2ED"}}
-						onMouseLeave={(e) => {e.currentTarget.style.backgroundColor = "transparent"}}
-						onClick={() => navigate("/app")}
-					>
-						<UsersRound />
-						Friends
-					</button>
-					<div className={"flex flex-row border-t text-2xl p-2"}>
-						<MessagesCircle />
-						<h2>Chats</h2>
-						<Plus className="block my-auto ml-auto cursor-pointer"
-						      onClick={() => chatMut.mutate({chatType: ChatType.GROUP})}
-						/>
-					</div>
-				</div>
-				<div className="flex-1 flex-row w-[10vw] overflow-y-auto">
-					{(chats.data && chats.data.chats.length > 0) ?
-						chats.data.chats.map((r, i) => (
-								<ChatsComp chat={r} chatIndex={i} hoveringChatId={hoveringChatId} setHoveringChatId={setHoveringChatId} currentChatId={currentChatId} setCurrentChatId={setCurrentChatId} />
-							)
-						) : (
-							<div>No chats found.</div>
-						)
-					}
-				</div>
-				<div className="shrink-0 h-[5vh] bg-gray-200 flex flex-row items-center justify-between">
-					<img className="border z-2 rounded-full h-[100%] aspect-square" src={user.data?.picture} alt="HI" />
-					<p className="text-2xl">{user.data?.username}</p>
-					<Settings className="cursor-pointer text-black hover:text-gray-500 transition-colors duration-100 cursor-pointer" width={40} height={40}
-					          onClick={() => setEditProfile(true)}/>
-					{editProfile && user.data && (
-						<EditProfile setFalse={setEditProfile} meData={user.data}/>
-					)}
-				</div>
+			<div className="flex flex-1 flex-col-reverse bg-gray-100 border-b w-full min-w-0 min-h-0">
+				<nav className={`
+					flex 
+					bg-digital-600
+					h-[6dvh]
+					items-center
+					justify-center
+					gap-6
+					@container-size
+					sticky bottom-0
+					z-50
+				`}>
+					{navIconToNode.map((v, i) => (<button><NavComp Icon={v.icon} index={i} setClicked={setActivePage} clicked={activePage} /></button>))}
+				</nav>
+				{navIconToNode.map((v, i) => i === activePage && (
+					v.content
+				))}
 			</div>
-			{chatId ? (
-				<Chats chatId={chatId} username={auth?.username} />
-			) : (
-				<Friends />
-			)}
 		</div>
+	)
+}
+
+function NavComp(
+	{Icon, index, setClicked, clicked}
+	:
+	{Icon: LucideIcon, index: number, setClicked: React.Dispatch<React.SetStateAction<number>>, clicked: number}
+) {
+	const cn = `size-[80cqh] cursor-pointer transition-all hover:-translate-y-1 duration-150`;
+	return (
+		<Icon className={`${cn} ${clicked === index ? "text-white/80 -translate-y-1" : "text-white"}`} onClick={() => setClicked(index)} />
 	)
 }
 
@@ -155,3 +145,52 @@ function ChatsComp({setHoveringChatId, chat, chatIndex, hoveringChatId, setCurre
 }
 
 export default AppPanel;
+
+/*
+<div className="flex flex-1 min-h-0">
+			<div className="flex w-fit flex-col bg-gray-100">
+				<div className="flex flex-col transition-colors">
+					<button
+						className={"cursor-pointer flex flex-row text-2xl p-2 w-full justify-left"}
+						onMouseEnter={(e) => {e.currentTarget.style.backgroundColor = "#F2F2ED"}}
+						onMouseLeave={(e) => {e.currentTarget.style.backgroundColor = "transparent"}}
+						onClick={() => navigate("/app")}
+					>
+						<UsersRound />
+						Friends
+					</button>
+					<div className={"flex flex-row border-t text-2xl p-2"}>
+						<MessagesCircle />
+						<h2>Chats</h2>
+						<Plus className="block my-auto ml-auto cursor-pointer"
+						      onClick={() => chatMut.mutate({chatType: ChatType.GROUP})}
+						/>
+					</div>
+				</div>
+				<div className="flex-1 flex-row w-[10vw] overflow-y-auto">
+					{(chats.data && chats.data.chats.length > 0) ?
+						chats.data.chats.map((r, i) => (
+								<ChatsComp chat={r} chatIndex={i} hoveringChatId={hoveringChatId} setHoveringChatId={setHoveringChatId} currentChatId={currentChatId} setCurrentChatId={setCurrentChatId} />
+							)
+						) : (
+							<div>No chats found.</div>
+						)
+					}
+				</div>
+				<div className="shrink-0 h-[5vh] bg-gray-200 flex flex-row items-center justify-between">
+					<img className="border z-2 rounded-full h-[100%] aspect-square" src={user.data?.picture} alt="HI" />
+					<p className="text-2xl">{user.data?.username}</p>
+					<Settings className="cursor-pointer text-black hover:text-gray-500 transition-colors duration-100 cursor-pointer" width={40} height={40}
+					          onClick={() => setEditProfile(true)}/>
+					{editProfile && user.data && (
+						<EditProfile setFalse={setEditProfile} meData={user.data}/>
+					)}
+				</div>
+			</div>
+			{chatId ? (
+				<Chats chatId={chatId} username={auth?.username} />
+			) : (
+				<Friends />
+			)}
+		</div>
+ */

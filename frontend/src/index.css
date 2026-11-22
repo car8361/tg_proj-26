@@ -17,6 +17,12 @@
     --color-digital-900: #001433;
     --color-digital-950: #000E24;
 
+    --animate-shimmer: shimmer 1.5s linear infinite;
+
+    @keyframes shimmer {
+        from { background-position: 100% 0; }
+        to { background-position: -100% 0; }
+    }
 }
 
 @custom-variant hover (&:hover);
