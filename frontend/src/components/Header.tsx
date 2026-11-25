@@ -36,22 +36,22 @@ function Header() {
 			min-h-[50px]
 			lg:text-2xl
 		`}>
-			<p className="ml-2 font-bold lg:ml-8 text-clamp[0.5rem, 2xl, 1rem]">My app</p>
+			<p className="ml-2 font-bold lg:ml-8 truncate text-clamp[0.5rem, 2xl, 1rem]">My app</p>
 			<nav className="flex flex-1 m-5 gap-4 xs:gap-2 justify-center">
-				<a href="/home" className="p-2 transition-all duration-150 hover:text-digital-100 cursor-pointer hover:translate-x-2">
+				<a href="/home" className="p-2 transition-all duration-150 hover:text-digital-100 cursor-pointer hover:translate-x-2 shrink-0">
 					<House aria-hidden="true" className="lg:size-10 xs:size-1 sm:size-2f" />
 				</a>
-				<a href="/api" className="p-2 transition-all duration-150 hover:text-digital-100 cursor-pointer hover:translate-x-2">
+				<a href="/api" className="p-2 transition-all duration-150 hover:text-digital-100 cursor-pointer hover:translate-x-2 shrink-0">
 					<Webhook className="lg:size-10" />
 				</a>
 				{data.userId && (
-					<a href="/app" className="p-2 transition-all duration-150 hover:text-digital-100 cursor-pointer hover:translate-x-2">
+					<a href="/app" className="p-2 transition-all duration-150 hover:text-digital-100 cursor-pointer hover:translate-x-2 shrink-0">
 						<MessageSquareMore className="lg:size-10" />
 					</a>
 				)}
 			</nav>
-			<div className="relative mr-2 lg:mr-8">
-				<button ref={refs.setReference} className="cursor-pointer font-bold overflow-hidden text-ellipsis text-nowrap" onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}>{data?.username ?? "Guest"}</button>
+			<div className="relative mr-2 lg:mr-8 min-w-0">
+				<button ref={refs.setReference} className="my-auto cursor-pointer font-bold max-w-full" onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}><p className={"truncate my-auto"}>{data?.username ?? "Guest"}</p></button>
 				{isUserMenuOpen && (
 					<UserMenu menuRef={refs.setFloating} style={floatingStyles} />
 				)}
@@ -87,7 +87,7 @@ function UserMenu({menuRef, style} : {menuRef: (node: HTMLElement | null) => voi
 	}
 
 	return (
-		<ol ref={menuRef} style={style} className="bg-white p-1 absolute flex flex-col z-10 gap-1  rounded-2xl border text-center">
+		<ol ref={menuRef} style={style} className="bg-white p-1 absolute flex flex-col z-50 gap-1  rounded-2xl border text-center">
 			{data.userId ?
 				(Object.entries(loggedInButtons).map(([name, func]) => <Button name={name} func={func}></Button>))
 				:

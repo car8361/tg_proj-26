@@ -15,7 +15,9 @@ function AppPanel({children} : { children?: ReactNode }) {
 	const [auth, setAuth] = useState<Types | undefined>(undefined);
 	const [searchParams, setSearchParams] = useSearchParams();
 
-	const chatId = searchParams.get('chatId');
+	const navigationParam = searchParams.get("navigation");
+	console.log("NP:", navigationParam);
+	const chatId = "1";
 
 	useEffect(() => {
 		const tempAuth = queryClient?.getQueryData<Types>(["auth"])
@@ -31,12 +33,12 @@ function AppPanel({children} : { children?: ReactNode }) {
 	const user = useQueryMe();
 	console.log("USER DATA", user.data);
 
-	const [activePage, setActivePage] = useState(1);
+	const [activePage, setActivePage] = useState(navigationParam ?? "friends");
 
-	const navIconToNode = [
-		{icon: CircleUserRound, content: <div /> },
-		{ icon: UsersRound, content: <Friends /> },
-		{ icon: MessagesCircle, content: <Chats chatId={chatId?.toString() ?? ""} username={auth?.username ?? ""} /> }
+	const routesData = [
+		{name: "settings", icon: CircleUserRound, content: <div /> },
+		{name: "friends", icon: UsersRound, content: <Friends /> },
+		{name: "chats", icon: MessagesCircle, content: <Chats chatId={chatId?.toString() ?? ""} username={auth?.username ?? ""} /> }
 	]
 
 	return (
@@ -46,6 +48,7 @@ function AppPanel({children} : { children?: ReactNode }) {
 					flex 
 					bg-digital-600
 					h-[6dvh]
+					min-h-[50px]
 					items-center
 					justify-center
 					gap-6
@@ -53,9 +56,12 @@ function AppPanel({children} : { children?: ReactNode }) {
 					sticky bottom-0
 					z-50
 				`}>
-					{navIconToNode.map((v, i) => (<button><NavComp Icon={v.icon} index={i} setClicked={setActivePage} clicked={activePage} /></button>))}
+					{routesData.map((v, i) => (
+						<button onClick={() => {setActivePage(routesData[i].name); navigate(`/app?navigation=${routesData[i].name}`)}}>
+							<NavComp Icon={v.icon} name={routesData[i].name} activeName={activePage} />
+						</button>))}
 				</nav>
-				{navIconToNode.map((v, i) => i === activePage && (
+				{routesData.map((v, i) => routesData[i].name === activePage && (
 					v.content
 				))}
 			</div>
@@ -64,13 +70,13 @@ function AppPanel({children} : { children?: ReactNode }) {
 }
 
 function NavComp(
-	{Icon, index, setClicked, clicked}
+	{Icon, name, activeName}
 	:
-	{Icon: LucideIcon, index: number, setClicked: React.Dispatch<React.SetStateAction<number>>, clicked: number}
+	{Icon: LucideIcon, name: string, activeName: string}
 ) {
-	const cn = `size-[80cqh] cursor-pointer transition-all hover:-translate-y-1 duration-150`;
+	const cn = `lg:size-10 cursor-pointer transition-all hover:-translate-y-1 duration-150 shrink-0`;
 	return (
-		<Icon className={`${cn} ${clicked === index ? "text-white/80 -translate-y-1" : "text-white"}`} onClick={() => setClicked(index)} />
+		<Icon className={`${cn} ${activeName === name ? "text-white/80 -translate-y-1" : "text-white"}`} />
 	)
 }
 

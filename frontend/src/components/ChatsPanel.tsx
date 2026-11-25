@@ -8,7 +8,7 @@ import {
 	useQueryChatUserPrivilages
 } from "../queries/chats/queries.ts";
 
-import {Check, Plus, UsersRound, X, SendHorizontal, Trash, Pencil} from "lucide-react";
+import {Check, Plus, UsersRound, X, SendHorizontal, Trash, Pencil, ChevronLeft} from "lucide-react";
 import {useRef, useState} from "react";
 import {useQueryFriends} from "../queries/relations/queries.ts";
 import type {GetChatMembers, GetFriends} from "../types/types.ts";
@@ -24,34 +24,53 @@ function ChatsPanel({chatId, username} : {chatId: string, username: string | und
 
 	const {data: chatsData, isLoading: chatsLoading} = useQueryChats();
 
+	const [selectedChat, setSelectedChat] = useState<{
+		name: string;
+		id: string;
+		picture: string;
+	} | null>(null);
 
 	return (
-		<div className="flex flex-1 flex-col">
-			<div className={`
-				w-[90%]
-				mx-auto
-			`}>
-				<div className="flex flex-row my-4 bg-digital-50 rounded-lg justify-between">
-					<h2 className={`
-						font-bold text-center text-digital-600 text-4xl
-					`}>Chats</h2>
-					<button className="group">
-						<Plus className="size-10 text-digital-600 group-hover:rotate-10 transition-all duration-150 cursor-pointer" />
+		!selectedChat ? (
+			<div className="flex flex-1 flex-col">
+				<div className={`
+					w-[90%]
+					mx-auto
+				`}>
+					<div className="flex flex-row my-4 bg-digital-50 rounded-lg justify-between">
+						<h2 className={`
+							font-bold text-center text-digital-600 text-4xl
+						`}>Chats</h2>
+						<button className="group">
+							<Plus className="size-10 text-digital-600 group-hover:rotate-10 transition-all duration-150 cursor-pointer" />
+						</button>
+					</div>
+				</div>
+				<div className="flex flex-1 flex-col gap-1 overflow-y-scroll w-[90%] mx-auto">
+					<LoadingChat loading={chatsLoading} length={8}>
+						{chatsData?.chats.map((c, i) => (
+							<div className={`bg-gray-200 rounded-lg px-2 h-20 flex group cursor-pointer`} onClick={() => setSelectedChat(c)}>
+								<img src={c.picture} className={`h-[90%] rounded-full aspect-square my-auto`} />
+								<p className={`self-center pl-2 text-2xl truncate`}>{c.name}</p>
+								<X className={`my-auto ml-auto mr-2 size-10 text-transparent group-hover:text-black`}/>
+							</div>
+						))}
+					</LoadingChat>
+				</div>
+			</div>
+		) : (
+			<div className="flex flex-1 font-bold relative">
+				<div className="flex flex-1 flex-row h-12">
+					<button className="cursor-pointer bg-white group transition-all duration-150">
+						<ChevronLeft className="size-10 group-hover:-translate-x-1" />
+					</button>
+					<h1 className={"mx-auto min-w-0 truncate text-3xl my-auto"}>{selectedChat.name}</h1>
+					<button className="cursor-pointer bg-white group transition-all duration-150">
+						<UsersRound className="size-10 group-hover:-translate-x-1" />
 					</button>
 				</div>
 			</div>
-			<div className="flex flex-1 flex-col gap-1 overflow-y-scroll w-[90%] mx-auto">
-				<LoadingChat loading={chatsLoading} length={8}>
-					{chatsData?.chats.map((c, i) => (
-						<div className={`bg-gray-200 rounded-lg px-2 h-20 flex group cursor-pointer`}>
-							<img src={c.picture} className={`h-[90%] rounded-full aspect-square my-auto`} />
-							<p className={`self-center pl-2 text-2xl truncate`}>{c.name}</p>
-							<X className={`my-auto ml-auto mr-2 size-10 text-transparent group-hover:text-black`}/>
-						</div>
-					))}
-				</LoadingChat>
-			</div>
-		</div>
+		)
 	)
 }
 
