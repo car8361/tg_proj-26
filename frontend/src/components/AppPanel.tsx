@@ -16,8 +16,8 @@ function AppPanel({children} : { children?: ReactNode }) {
 	const [searchParams, setSearchParams] = useSearchParams();
 
 	const navigationParam = searchParams.get("navigation");
+	const chatId = searchParams.get("chatId");
 	console.log("NP:", navigationParam);
-	const chatId = "1";
 
 	useEffect(() => {
 		const tempAuth = queryClient?.getQueryData<Types>(["auth"])
@@ -38,13 +38,14 @@ function AppPanel({children} : { children?: ReactNode }) {
 	const routesData = [
 		{name: "settings", icon: CircleUserRound, content: <div /> },
 		{name: "friends", icon: UsersRound, content: <Friends /> },
-		{name: "chats", icon: MessagesCircle, content: <Chats chatId={chatId?.toString() ?? ""} username={auth?.username ?? ""} /> }
+		{name: "chats", icon: MessagesCircle, content: <Chats /> }
 	]
 
 	return (
 		<div className="flex flex-1 min-h-0">
-			<div className="flex flex-1 flex-col-reverse bg-gray-100 border-b w-full min-w-0 min-h-0">
-				<nav className={`
+			<div className="flex flex-1 flex-col-reverse bg-gray-100 w-full min-w-0 min-h-0">
+				{!chatId && (
+					<nav className={`
 					flex 
 					bg-digital-600
 					h-[6dvh]
@@ -56,11 +57,13 @@ function AppPanel({children} : { children?: ReactNode }) {
 					sticky bottom-0
 					z-50
 				`}>
-					{routesData.map((v, i) => (
-						<button onClick={() => {setActivePage(routesData[i].name); navigate(`/app?navigation=${routesData[i].name}`)}}>
-							<NavComp Icon={v.icon} name={routesData[i].name} activeName={activePage} />
-						</button>))}
-				</nav>
+						{routesData.map((v, i) => (
+							<button onClick={() => {setActivePage(routesData[i].name); navigate(`/app?navigation=${routesData[i].name}`)}}
+							>
+								<NavComp Icon={v.icon} name={routesData[i].name} activeName={activePage} />
+							</button>))}
+					</nav>
+				)}
 				{routesData.map((v, i) => routesData[i].name === activePage && (
 					v.content
 				))}

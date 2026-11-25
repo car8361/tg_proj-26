@@ -8,27 +8,31 @@ import {
 	useQueryChatUserPrivilages
 } from "../queries/chats/queries.ts";
 
-import {Check, Plus, UsersRound, X, SendHorizontal, Trash, Pencil, ChevronLeft} from "lucide-react";
-import {useRef, useState} from "react";
+import {Check, Plus, UsersRound, X, SendHorizontal, Trash, Pencil, ChevronLeft, SendHorizonal, FaceSlightlySmilingPlus} from "lucide-react";
+import {useEffect, useMemo, useRef, useState} from "react";
 import {useQueryFriends} from "../queries/relations/queries.ts";
-import type {GetChatMembers, GetFriends} from "../types/types.ts";
+import type {GetChatMembers, GetChatMessages, GetFriends} from "../types/types.ts";
 import {ChatType} from "../queries/utils.ts";
+import {useNavigate, useParams, useSearchParams} from "react-router";
 
-function ChatsPanel({chatId, username} : {chatId: string, username: string | undefined}) {
+function ChatsPanel() {
+	const navigate = useNavigate();
 	const [membersOpen, setMembersOpen] = useState(false);
 	const [chatName, setChatName] = useState<string | null>(null);
 	const [inputValue, setInputValue] = useState<string>("");
 	const [msgHovering, setMsgHovering] = useState<number>(-1);
 	const [editingId, setEditingId] = useState(-1);
 	const [editingValue, setEditingValue] = useState<string>("");
+	const [params, setParams] = useSearchParams();
 
 	const {data: chatsData, isLoading: chatsLoading} = useQueryChats();
 
-	const [selectedChat, setSelectedChat] = useState<{
-		name: string;
-		id: string;
-		picture: string;
-	} | null>(null);
+	const chatId = params.get("chatId");
+
+	const selectedChat = useMemo(() => {
+		return chatsData?.chats.find(c => String(c.id) === String(chatId)) ?? null;
+	}, [chatsData, chatId])
+	const [chatMessages, setChatMessages] = useState<GetChatMessages[]>();
 
 	return (
 		!selectedChat ? (
@@ -49,7 +53,7 @@ function ChatsPanel({chatId, username} : {chatId: string, username: string | und
 				<div className="flex flex-1 flex-col gap-1 overflow-y-scroll w-[90%] mx-auto">
 					<LoadingChat loading={chatsLoading} length={8}>
 						{chatsData?.chats.map((c, i) => (
-							<div className={`bg-gray-200 rounded-lg px-2 h-20 flex group cursor-pointer`} onClick={() => setSelectedChat(c)}>
+							<div className={`bg-gray-200 rounded-lg px-2 h-20 flex group cursor-pointer`} onClick={() => { navigate("/app?navigation=chats&chatId=" + c.id)}}>
 								<img src={c.picture} className={`h-[90%] rounded-full aspect-square my-auto`} />
 								<p className={`self-center pl-2 text-2xl truncate`}>{c.name}</p>
 								<X className={`my-auto ml-auto mr-2 size-10 text-transparent group-hover:text-black`}/>
@@ -59,17 +63,32 @@ function ChatsPanel({chatId, username} : {chatId: string, username: string | und
 				</div>
 			</div>
 		) : (
-			<div className="flex flex-1 font-bold relative">
-				<div className="flex flex-1 flex-row h-12">
-					<button className="cursor-pointer bg-white group transition-all duration-150">
-						<ChevronLeft className="size-10 group-hover:-translate-x-1" />
-					</button>
-					<h1 className={"mx-auto min-w-0 truncate text-3xl my-auto"}>{selectedChat.name}</h1>
-					<button className="cursor-pointer bg-white group transition-all duration-150">
-						<UsersRound className="size-10 group-hover:-translate-x-1" />
-					</button>
+			<LoadingChat loading={chatsLoading} length={8}>
+				<div className="flex flex-1 flex-col font-bold relative">
+					<div className="flex h-10 flex-row h-12 border-y border-y-white">
+						<button className="cursor-pointer bg-white group transition-all duration-150 px-2 rounded-r-full" onClick={() => {navigate("/app?navigation=chats");}}>
+							<ChevronLeft className="size-10 group-hover:-translate-x-1" />
+						</button>
+						<h1 className={"mx-auto min-w-0 truncate text-3xl my-auto"}>{selectedChat.name}</h1>
+						<button className="cursor-pointer bg-white transition-all duration-150 rounded-l-full px-2">
+							<UsersRound className="size-10 my-auto mx-auto" />
+						</button>
+					</div>
+					<div className="flex flex-1">
+						{chatMessages && chatMessages.length > 0 ? (
+							<></>
+						) : (
+							<h2 className="mx-auto my-auto text-4xl text-balance text-center">No chat messages!</h2>
+						)}
+					</div>
+					<div className="flex gap-2 h-6dvh min-h-[50px] bg-white">
+						<button className="my-auto ml-2"><Plus className="lg:size-10 size-8"/></button>
+						<input className="flex flex-1 min-w-0 outline-none" />
+						<button className="my-auto"><SendHorizonal className="lg:size-10 size-8"/></button>
+						<button className="my-auto mr-2"><FaceSlightlySmilingPlus className="lg:size-10 size-8"/></button>
+					</div>
 				</div>
-			</div>
+			</LoadingChat>
 		)
 	)
 }
