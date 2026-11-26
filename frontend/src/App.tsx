@@ -8,7 +8,7 @@ import Home from "./routes/Home.tsx";
 import Dashboard from "./routes/Dashboard.tsx";
 import NotFound from "./routes/NotFound.tsx";
 import Footer from "./components/Footer.tsx";
-import Chats from "./components/ChatsPanel.tsx";
+import Chats from "./components/ChatsProvider.tsx";
 import Friends from "./components/Friends.tsx";
 import {useQueryAuth} from "./queries/auth/queries.ts";
 import AppPanel from "./components/AppPanel.tsx";
@@ -16,12 +16,15 @@ import AppPanel from "./components/AppPanel.tsx";
 function App() {
 	const { data } = useQueryAuth();
 	console.log("Types data: ", data);
+	const url = window.location.pathname;
 	const showVerifyOverlay = data && data?.userId && data.verified === "false";
 	return (
 		<div>
 			<div className="flex flex-col min-h-dvh w-full">
 				{ showVerifyOverlay && <VerifyOverlay /> }
-				<Header />
+				{!url.includes("app") && (
+					<Header />
+				)}
 				<main className="flex flex-1 flex-col min-h-0 min-w-0 w-full">
 					<Routes>
 						<Route path="" element={<RedirectHome/>}/>

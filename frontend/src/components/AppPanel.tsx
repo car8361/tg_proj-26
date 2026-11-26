@@ -5,7 +5,7 @@ import {queryClient} from "../queryClient.ts";
 import {Plus, UsersRound, X, MessagesCircle, Settings, type LucideIcon, CircleUserRound} from "lucide-react";
 import {ChatType} from "../queries/utils.ts";
 import {useMutationChat, useMutationDeleteChat, useQueryChats} from "../queries/chats/queries.ts";
-import Chats from "./ChatsPanel.tsx";
+import Chats from "./ChatsProvider.tsx";
 import Friends from "./Friends.tsx"
 import {useMutationPicture, useQueryMe} from "../queries/me/queries.ts";
 import type { GetMe } from "../types/types.ts"
@@ -14,18 +14,31 @@ function AppPanel({children} : { children?: ReactNode }) {
 	const navigate = useNavigate();
 	const [auth, setAuth] = useState<Types | undefined>(undefined);
 	const [searchParams, setSearchParams] = useSearchParams();
+	const lastScroll = useRef(0);
+	const [stickyActive, setStickyActive] = useState(true);
 
 	const navigationParam = searchParams.get("navigation");
 	const chatId = searchParams.get("chatId");
 	console.log("NP:", navigationParam);
 
 	useEffect(() => {
-		const tempAuth = queryClient?.getQueryData<Types>(["auth"])
-		if (!tempAuth?.userId) {
-			navigate("/login");
+		const onScroll = () => {
+			const sy = window.scrollY;
+			const diff = lastScroll.current - sy;
+			if (Math.abs(diff) < 5) {
+				lastScroll.current = sy;
+				return;
+			}
+			if (sy < lastScroll.current) {
+				lastScroll.current = sy;
+				setStickyActive(true);
+			} else {
+				lastScroll.current = sy;
+				setStickyActive(false);
+			}
 		}
-		console.log(tempAuth)
-		setAuth(tempAuth);
+		document.addEventListener("scroll", onScroll, {passive: true})
+		return () => document.removeEventListener("scroll", onScroll)
 	}, [])
 
 	const chatMut = useMutationChat();
@@ -56,6 +69,8 @@ function AppPanel({children} : { children?: ReactNode }) {
 					@container-size
 					sticky bottom-0
 					z-50
+					transition-all duration-200
+					transform-transform ${stickyActive ? "translate-y-0" : "translate-y-full"}
 				`}>
 						{routesData.map((v, i) => (
 							<button onClick={() => {setActivePage(routesData[i].name); navigate(`/app?navigation=${routesData[i].name}`)}}

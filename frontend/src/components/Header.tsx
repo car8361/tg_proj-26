@@ -1,6 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {useState} from "react";
-import {useNavigate} from "react-router";
+import {useNavigate, useSearchParams} from "react-router";
 import type { Types } from "../types/types.ts";
 import {useMutationDeleteAccount, useMutationLogout} from "../queries/auth/queries.ts";
 import { House, Webhook, MessageSquareMore } from "lucide-react";
