@@ -1,5 +1,6 @@
 import {
-	useMutationAddMembers, useMutationChatPicture, useMutationDeleteMessage, useMutationPatchMessage,
+	useMutationAddMembers, useMutationChat, useMutationChatPicture,
+	useMutationDeleteChat, useMutationDeleteMessage, useMutationPatchMessage,
 	useMutationSendMessage,
 	useMutationUpdChat,
 	useQueryChat,
@@ -8,26 +9,22 @@ import {
 	useQueryChatUserPrivilages
 } from "../queries/chats/queries.ts";
 
-import {Check, Plus, UsersRound, X, SendHorizontal, Trash, Pencil, ChevronLeft, SendHorizonal, FaceSlightlySmilingPlus} from "lucide-react";
-import {useEffect, useMemo, useRef, useState} from "react";
-import {useQueryFriends} from "../queries/relations/queries.ts";
+import {Check, Plus, UsersRound, X, SendHorizontal, Trash, Pencil, ChevronLeft, SendHorizonal, FaceSlightlySmilingPlus, Search} from "lucide-react";
+import {type Dispatch, type SetStateAction, useEffect, useMemo, useRef, useState} from "react";
 import type {GetChatMembers, GetChatMessages, GetChats, GetFriends} from "../types/types.ts";
 import {ChatType} from "../queries/utils.ts";
 import {useNavigate, useParams, useSearchParams} from "react-router";
+import React from "react";
+import Confirm from "./Confirm";
 
 function ChatsProvider() {
 	const navigate = useNavigate();
-	const [membersOpen, setMembersOpen] = useState(false);
-	const [chatName, setChatName] = useState<string | null>(null);
-	const [inputValue, setInputValue] = useState<string>("");
-	const [msgHovering, setMsgHovering] = useState<number>(-1);
-	const [editingId, setEditingId] = useState(-1);
-	const [editingValue, setEditingValue] = useState<string>("");
 	const [params, setParams] = useSearchParams();
 
 	const {data: chatsData, isLoading: chatsLoading} = useQueryChats();
 
 	const chatId = params.get("chatId");
+	const showMembers = params.get("showMembers");
 	const selectedChat = useMemo(() => {
 		return chatsData?.chats.find(c => String(c.id) === String(chatId)) ?? null;
 	}, [chatsData, chatId])
@@ -44,9 +41,50 @@ function ChatsProvider() {
 			<ChatsMenu chatsData={chatsData} chatsLoading={chatsLoading} />
 		) : (
 			<LoadingChat loading={chatsLoading} length={8}>
-				<Chat selectedChat={selectedChat} chatId={chatId!} />
+				{!showMembers ? (
+					<Chat selectedChat={selectedChat} chatId={chatId!} />
+				) : (
+					<Members selectedChat={selectedChat} chatId={chatId}/>
+				)}
 			</LoadingChat>
 		)
+	)
+}
+
+function Members({selectedChat, chatId} : {selectedChat: { name: string }, chatId: string | null}) {
+	const [searchValue, setSearchValue] = useState("");
+	const navigate = useNavigate();
+	const {data: membersData} = useQueryChatMembers(chatId);
+
+	useEffect(() => {
+		window.scrollTo(0, 0);
+	}, [])
+
+	return (
+		<div className="flex flex-col flex-1">
+			<div className="flex h-10 flex-row justify-between h-12 border-y border-y-white sticky top-0 bg-gray-100">
+				<button className="cursor-pointer bg-white group transition-all duration-150 px-2 rounded-r-full" onClick={() => {navigate(`/app?navigation=chats&chatId=${chatId}`);}}>
+					<X className="size-10 group-hover:-translate-x-1" />
+				</button>
+				<input value={searchValue} onChange={(e) => setSearchValue(e.currentTarget.value)} className="outline-none px-2 text-center truncate" placeholder={"search members"}/>
+				<button className="cursor-pointer bg-white group transition-all duration-150 px-2 rounded-l-full" onClick={() => {}}>
+					<Search className="size-10 group-hover:-translate-x-1" />
+				</button>
+			</div>
+			<div className="flex flex-col my-2 gap-2 w-[90%] mx-auto">
+				{membersData?.members.map((m, i) => (
+					<div className="bg-white rounded-xl">
+						<div className="flex flex-row p-2">
+							<img src={m.picture} alt="pfp" className="rounded-full aspect-square h-15" />
+							<div className="mb-auto ml-2 overflow-hidden">
+								<h2 className="truncate">{m.display_name}</h2>
+								<p className="truncate text-gray-500">@{m.username}</p>
+							</div>
+						</div>
+					</div>
+					))}
+			</div>
+		</div>
 	)
 }
 
@@ -54,6 +92,9 @@ function Chat({selectedChat, chatId} : {selectedChat: { name: string }, chatId: 
 	const navigate = useNavigate();
 	const {data: md, isLoading: messagesLoading} = useQueryChatMessages(chatId);
 	const messages = md?.messages
+
+	const sendMessage = useMutationSendMessage();
+	const [inputValue, setInputValue] = useState("");
 
 	const inputRef = useRef<HTMLInputElement>(null);
 	inputRef.current?.scrollIntoView({behavior: "smooth", block: "end"});
@@ -69,7 +110,7 @@ function Chat({selectedChat, chatId} : {selectedChat: { name: string }, chatId: 
 					<ChevronLeft className="size-10 group-hover:-translate-x-1" />
 				</button>
 				<h1 className={"mx-auto min-w-0 truncate text-3xl my-auto"}>{selectedChat.name}</h1>
-				<button className="cursor-pointer bg-white transition-all duration-150 rounded-l-full px-2">
+				<button className="cursor-pointer bg-white transition-all duration-150 rounded-l-full px-2" onClick={() => {navigate("/app?navigation=chats&chatId=6&showMembers=true")}}>
 					<UsersRound className="size-10 my-auto mx-auto" />
 				</button>
 			</div>
@@ -92,8 +133,21 @@ function Chat({selectedChat, chatId} : {selectedChat: { name: string }, chatId: 
 			</div>
 			<div className="flex gap-2 h-6dvh min-h-[50px] bg-white">
 				<button className="my-auto ml-2"><Plus className="lg:size-10 size-8"/></button>
-				<input className="flex flex-1 min-w-0 outline-none" ref={inputRef} />
-				<button className="my-auto"><SendHorizonal className="lg:size-10 size-8"/></button>
+				<input className="flex flex-1 min-w-0 outline-none"
+					   ref={inputRef}
+					   value={inputValue}
+					   onChange={(e) => setInputValue(e.currentTarget.value)}
+					   onKeyDown={(e) => {
+					if (e.key === "Enter") {
+						e.currentTarget.value.length > 0 && sendMessage.mutate({
+							message: e.currentTarget.value,
+							chatId: chatId
+						});
+					}
+				}} />
+				<button className="my-auto" onClick={() => {inputValue.length > 0 && sendMessage.mutate({message: inputValue, chatId: chatId})}}>
+					<SendHorizonal className="lg:size-10 size-8 cursor-pointer" />
+				</button>
 				<button className="my-auto mr-2"><FaceSlightlySmilingPlus className="lg:size-10 size-8"/></button>
 			</div>
 		</div>
@@ -102,6 +156,21 @@ function Chat({selectedChat, chatId} : {selectedChat: { name: string }, chatId: 
 
 function ChatsMenu({chatsData, chatsLoading} : {chatsData: GetChats | undefined, chatsLoading: boolean}) {
 	const navigate = useNavigate();
+
+	const createChat = useMutationChat();
+	const deleteChat = useMutationDeleteChat();
+
+	const [confirmActive, setConfirmActive] = useState<boolean>(false);
+	const deleteChatId = useRef<string>("");
+	const confirmData = {
+		title: "Are you sure you want to delete this chat? This action cannot be undone.",
+		onAccept: () => deleteChat.mutate(deleteChatId.current),
+		onReject: () => {},
+		setActive: setConfirmActive
+	};
+
+	window.scrollTo(0, 0);
+
 	return (
 		<div className="flex flex-1 flex-col">
 			<div className={`
@@ -113,17 +182,24 @@ function ChatsMenu({chatsData, chatsLoading} : {chatsData: GetChats | undefined,
 							font-bold text-center text-digital-600 text-4xl
 						`}>Chats</h2>
 					<button className="group">
-						<Plus className="size-10 text-digital-600 group-hover:rotate-10 transition-all duration-150 cursor-pointer" />
+						<Plus className="size-10 text-digital-600 group-hover:rotate-10 transition-all duration-150 cursor-pointer" onClick={() => createChat.mutate({chatType: ChatType.GROUP})} />
 					</button>
 				</div>
 			</div>
 			<div className="flex flex-1 flex-col gap-1 overflow-y-scroll w-[90%] mx-auto">
 				<LoadingChat loading={chatsLoading} length={8}>
 					{chatsData?.chats.map((c, i) => (
-						<div className={`bg-gray-200 rounded-lg px-2 h-20 flex group cursor-pointer`} onClick={() => { navigate("/app?navigation=chats&chatId=" + c.id)}}>
-							<img src={c.picture} className={`h-[90%] rounded-full aspect-square my-auto`} />
-							<p className={`self-center pl-2 text-2xl truncate`}>{c.name}</p>
-							<X className={`my-auto ml-auto mr-2 size-10 text-transparent group-hover:text-black`}/>
+						<div className={`bg-gray-200 rounded-lg px-2 h-20 flex group cursor-pointer`}>
+							<div className="flex flex-row gap-2" onClick={() => { navigate("/app?navigation=chats&chatId=" + c.id)}}>
+								<img src={c.picture} className={`h-[90%] rounded-full aspect-square my-auto`} />
+								<p className={`self-center pl-2 text-2xl truncate text-white font-bold`}>{c.name}</p>
+							</div>
+							<button className="my-auto ml-auto mr-2 cursor-pointer" onClick={() => { deleteChatId.current = c.id; setConfirmActive(true);}}>
+								<X className={`size-10 text-transparent text-white`}/>
+							</button>
+							{confirmActive && (
+								<Confirm data={confirmData} />
+							)}
 						</div>
 					))}
 				</LoadingChat>
