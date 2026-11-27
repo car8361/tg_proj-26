@@ -9,7 +9,7 @@ import {
 	useQueryChatUserPrivilages
 } from "../queries/chats/queries.ts";
 
-import {Check, Plus, UsersRound, X, SendHorizontal, Trash, Pencil, ChevronLeft, SendHorizonal, FaceSlightlySmilingPlus, Search} from "lucide-react";
+import {Check, Plus, UsersRound, X, ChevronDown, ChevronLeft, SendHorizonal, FaceSlightlySmilingPlus, Search} from "lucide-react";
 import {type Dispatch, type SetStateAction, useEffect, useMemo, useRef, useState} from "react";
 import type {GetChatMembers, GetChatMessages, GetChats, GetFriends} from "../types/types.ts";
 import {ChatType} from "../queries/utils.ts";
@@ -93,19 +93,31 @@ function Chat({selectedChat, chatId} : {selectedChat: { name: string }, chatId: 
 	const {data: md, isLoading: messagesLoading} = useQueryChatMessages(chatId);
 	const messages = md?.messages
 
+	const [fastScrollVisible, setFastScrollVisible] = useState(false);
+
 	const sendMessage = useMutationSendMessage();
 	const [inputValue, setInputValue] = useState("");
 
 	const inputRef = useRef<HTMLInputElement>(null);
-	inputRef.current?.scrollIntoView({behavior: "smooth", block: "end"});
 
 	useEffect(() => {
 		inputRef.current?.focus();
+		inputRef.current?.scrollIntoView({behavior: "smooth", block: "end"});
 	}, [])
+
+	useEffect(() => {
+		const observer = new IntersectionObserver((entries) => {
+			setFastScrollVisible(!entries[0].isIntersecting);
+		})
+
+		if (inputRef.current) observer.observe(inputRef.current);
+
+		return () => observer.disconnect();
+	}, [window.scrollY])
 
 	return (
 		<div className="flex flex-1 flex-col font-bold relative">
-			<div className="flex h-10 flex-row h-12 border-y border-y-white sticky top-0 bg-gray-100">
+			<div className="flex h-10 flex-row h-12 border-y border-y-white  sticky top-0 bg-gray-100 z-50">
 				<button className="cursor-pointer bg-white group transition-all duration-150 px-2 rounded-r-full" onClick={() => {navigate("/app?navigation=chats");}}>
 					<ChevronLeft className="size-10 group-hover:-translate-x-1" />
 				</button>
@@ -114,7 +126,7 @@ function Chat({selectedChat, chatId} : {selectedChat: { name: string }, chatId: 
 					<UsersRound className="size-10 my-auto mx-auto" />
 				</button>
 			</div>
-			<div className="flex flex-1">
+			<div className="flex flex-col flex-1 relative">
 				<div className="flex flex-col w-[90%] mx-auto group">
 					{messages && messages.length > 0 ?
 						messages.map((c, i) => (
@@ -122,7 +134,7 @@ function Chat({selectedChat, chatId} : {selectedChat: { name: string }, chatId: 
 								<img src={c.picture} className="rounded-full aspect-square h-10" />
 								<div className="flex flex-col gap-2">
 									<p className="mb-auto truncate">{c.display_name}</p>
-									<p className="break-all">{c.msg}hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh</p>
+									<p className="break-all">{c.msg}</p>
 								</div>
 							</div>
 						))
@@ -130,6 +142,15 @@ function Chat({selectedChat, chatId} : {selectedChat: { name: string }, chatId: 
 							<h2 className="mx-auto my-auto text-4xl text-balance text-center">No chat messages!</h2>
 						)}
 				</div>
+				{fastScrollVisible && (
+					<button className={`
+					z-50 left-1/2 -translate-x-1/2 bottom-5
+					w-fit bg-blue-500 sticky mb-5 animate-jiggle-y rounded-full cursor-pointer`}
+							onClick={() => {inputRef.current?.scrollIntoView({behavior: "smooth", block: "end"});}}
+					>
+						<ChevronDown className="size-10 lg:size-15 text-white" />
+					</button>
+				)}
 			</div>
 			<div className="flex gap-2 h-6dvh min-h-[50px] bg-white">
 				<button className="my-auto ml-2"><Plus className="lg:size-10 size-8"/></button>

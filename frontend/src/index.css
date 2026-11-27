@@ -19,10 +19,22 @@
 
     --animate-shimmer: shimmer 1.5s linear infinite;
 
-    @keyframes shimmer {
-        from { background-position: 100% 0; }
-        to { background-position: -100% 0; }
+    --animate-jiggle-y: jiggleY 3s linear infinite;
+
+    @keyframes jiggleX {
+
     }
+}
+
+@keyframes jiggleY {
+    0% {transform: translateY(0px)}
+    33% {transform: translateY(-5px)}
+    66% {transform: translateY(5px)}
+}
+
+@keyframes shimmer {
+    from { background-position: 100% 0; }
+    to { background-position: -100% 0; }
 }
 
 @custom-variant hover (&:hover);

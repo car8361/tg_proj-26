@@ -7,12 +7,12 @@ import {ChatType} from "../queries/utils.ts";
 import {useMutationChat, useMutationDeleteChat, useQueryChats} from "../queries/chats/queries.ts";
 import Chats from "./ChatsProvider.tsx";
 import Friends from "./Friends.tsx"
+import SettingsRoute from "./Settings.tsx";
 import {useMutationPicture, useQueryMe} from "../queries/me/queries.ts";
 import type { GetMe } from "../types/types.ts"
 
 function AppPanel({children} : { children?: ReactNode }) {
 	const navigate = useNavigate();
-	const [auth, setAuth] = useState<Types | undefined>(undefined);
 	const [searchParams, setSearchParams] = useSearchParams();
 	const lastScroll = useRef(0);
 	const [stickyActive, setStickyActive] = useState(true);
@@ -43,13 +43,11 @@ function AppPanel({children} : { children?: ReactNode }) {
 
 	const chatMut = useMutationChat();
 	const chats = useQueryChats();
-	const user = useQueryMe();
-	console.log("USER DATA", user.data);
 
 	const [activePage, setActivePage] = useState(navigationParam ?? "friends");
 
 	const routesData = [
-		{name: "settings", icon: CircleUserRound, content: <div /> },
+		{name: "settings", icon: CircleUserRound, content: <SettingsRoute /> },
 		{name: "friends", icon: UsersRound, content: <Friends /> },
 		{name: "chats", icon: MessagesCircle, content: <Chats /> }
 	]
