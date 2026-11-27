@@ -115,6 +115,8 @@ function Chat({selectedChat, chatId} : {selectedChat: { name: string }, chatId: 
 		return () => observer.disconnect();
 	}, [window.scrollY])
 
+	const emojis = ["😏"]
+
 	return (
 		<div className="flex flex-1 flex-col font-bold relative">
 			<div className="flex h-10 flex-row h-12 border-y border-y-white  sticky top-0 bg-gray-100 z-50">
@@ -169,7 +171,24 @@ function Chat({selectedChat, chatId} : {selectedChat: { name: string }, chatId: 
 				<button className="my-auto" onClick={() => {inputValue.length > 0 && sendMessage.mutate({message: inputValue, chatId: chatId})}}>
 					<SendHorizonal className="lg:size-10 size-8 cursor-pointer" />
 				</button>
-				<button className="my-auto mr-2"><FaceSlightlySmilingPlus className="lg:size-10 size-8"/></button>
+				<button className="my-auto mr-2">
+					<FaceSlightlySmilingPlus className="lg:size-10 size-8"/>
+				</button>
+			</div>
+			<div className={`fixed w-[90%] bg-white h-[90%] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-51 rounded-2xl *:m-2`}>
+				<div className={`grid grid-cols-3 gap-1
+				*:rounded-xl *:p-2 *:text-[clamp(0.8em,2xl,1em)]
+				*:bg-gray-100
+				`}>
+					<button className={``}>Emojis</button>
+					<button className={``}>Gifs</button>
+					<button className={``}>Stickers</button>
+				</div>
+				<div className="overflow-y-scroll bg-gray-100 m-2">
+					{emojis.map((v, i) => (
+						<button>{v}</button>
+					))}
+				</div>
 			</div>
 		</div>
 	)
