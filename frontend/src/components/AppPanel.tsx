@@ -15,7 +15,7 @@ function AppPanel({children} : { children?: ReactNode }) {
 	const navigate = useNavigate();
 	const [searchParams, setSearchParams] = useSearchParams();
 	const lastScroll = useRef(0);
-	const [stickyActive, setStickyActive] = useState(true);
+	const stickyActive = useRef(false);
 
 	const navigationParam = searchParams.get("navigation");
 	const chatId = searchParams.get("chatId");
@@ -31,10 +31,10 @@ function AppPanel({children} : { children?: ReactNode }) {
 			}
 			if (sy < lastScroll.current) {
 				lastScroll.current = sy;
-				setStickyActive(true);
+				stickyActive.current = true;
 			} else {
 				lastScroll.current = sy;
-				setStickyActive(false);
+				stickyActive.current = false;
 			}
 		}
 		document.addEventListener("scroll", onScroll, {passive: true})

@@ -9,15 +9,28 @@ import {
 	useQueryChatUserPrivilages
 } from "../queries/chats/queries.ts";
 
-import {Check, Plus, UsersRound, X, ChevronDown, ChevronLeft, SendHorizonal, FaceSlightlySmilingPlus, Search} from "lucide-react";
-import {type Dispatch, type SetStateAction, useEffect, useMemo, useRef, useState} from "react";
+import {Check, Plus, UsersRound, X, ChevronDown, ChevronLeft, SendHorizonal, FaceSlightlySmilingPlus, Search, FaceSlightlySmiling, Leaf, Soup, Activity, TrainHighSpeed, LampDesk, Asterisk, Flag, Motorbike} from "lucide-react";
+import { useEffect, useMemo, useRef, useState} from "react";
 import type {GetChatMembers, GetChatMessages, GetChats, GetFriends} from "../types/types.ts";
 import {ChatType} from "../queries/utils.ts";
 import {useNavigate, useParams, useSearchParams} from "react-router";
 import React from "react";
+import EmojisJSON from "../emojis.json";
 import Confirm from "./Confirm";
+import {
+	autoUpdate,
+	flip,
+	offset,
+	shift,
+	useClick,
+	useDismiss,
+	useFloating,
+	useInteractions,
+	useTransitionStatus
+} from "@floating-ui/react";
 
 function ChatsProvider() {
+	console.log("render provider")
 	const navigate = useNavigate();
 	const [params, setParams] = useSearchParams();
 
@@ -29,29 +42,50 @@ function ChatsProvider() {
 		return chatsData?.chats.find(c => String(c.id) === String(chatId)) ?? null;
 	}, [chatsData, chatId])
 
-	const inputRef = useRef<HTMLInputElement>(null);
+	/*const inputRef = useRef<HTMLInputElement>(null);
 
 	useEffect(() => {
 		console.log("INPUT CURRENT: ", inputRef.current);
 		inputRef.current?.focus();
-	}, [])
+	}, [])*/
 
+	type list = "menu" | "chat" | "members";
+	//const show = (v: list) => selectedChat ? v === "chat" ? "flex" : v === "members" ? "flex" : "hidden" : v === "menu" ? "flex" : "hidden";
+	const show = (v: list) => {
+		if (v === "members" && showMembers && selectedChat) {
+			return "flex";
+		}
+		if (v === "chat" && selectedChat && !showMembers) {
+			return "flex";
+		}
+		if (v === "menu" && !selectedChat) {
+			return "flex";
+		}
+		return "hidden"
+	}
+	console.log({ selectedChat, showMembers, chat: show("chat"), menu: show("menu") });
 	return (
-		!selectedChat ? (
-			<ChatsMenu chatsData={chatsData} chatsLoading={chatsLoading} />
-		) : (
-			<LoadingChat loading={chatsLoading} length={8}>
-				{!showMembers ? (
-					<Chat selectedChat={selectedChat} chatId={chatId!} />
-				) : (
+		<div className="flex min-h-dvh">
+			<aside className={`${show("menu")} w-full`}>
+				<ChatsMenu chatsData={chatsData} chatsLoading={chatsLoading} />
+			</aside>
+			{selectedChat && (
+				<section className={`${show("chat")} flex-1 min-w-0 flex-col`}>
+					<LoadingChat loading={chatsLoading} length={8}>
+						<Chat selectedChat={selectedChat} chatId={chatId!} />
+					</LoadingChat>
+				</section>
+			)}
+			{selectedChat && (
+				<aside className={`${show("members")} w-full`}>
 					<Members selectedChat={selectedChat} chatId={chatId}/>
-				)}
-			</LoadingChat>
-		)
+				</aside>
+			)}
+		</div>
 	)
 }
 
-function Members({selectedChat, chatId} : {selectedChat: { name: string }, chatId: string | null}) {
+function Members({selectedChat, chatId, className} : {selectedChat: { name: string }, chatId: string | null, className?: string}) {
 	const [searchValue, setSearchValue] = useState("");
 	const navigate = useNavigate();
 	const {data: membersData} = useQueryChatMembers(chatId);
@@ -61,7 +95,7 @@ function Members({selectedChat, chatId} : {selectedChat: { name: string }, chatI
 	}, [])
 
 	return (
-		<div className="flex flex-col flex-1">
+		<div className={`flex flex-col flex-1 ${className}`}>
 			<div className="flex h-10 flex-row justify-between h-12 border-y border-y-white sticky top-0 bg-gray-100">
 				<button className="cursor-pointer bg-white group transition-all duration-150 px-2 rounded-r-full" onClick={() => {navigate(`/app?navigation=chats&chatId=${chatId}`);}}>
 					<X className="size-10 group-hover:-translate-x-1" />
@@ -88,7 +122,8 @@ function Members({selectedChat, chatId} : {selectedChat: { name: string }, chatI
 	)
 }
 
-function Chat({selectedChat, chatId} : {selectedChat: { name: string }, chatId: string}) {
+function Chat({selectedChat, chatId, className} : {selectedChat: { name: string }, chatId: string, className?: string}) {
+	console.log("render");
 	const navigate = useNavigate();
 	const {data: md, isLoading: messagesLoading} = useQueryChatMessages(chatId);
 	const messages = md?.messages
@@ -98,14 +133,31 @@ function Chat({selectedChat, chatId} : {selectedChat: { name: string }, chatId: 
 	const sendMessage = useMutationSendMessage();
 	const [inputValue, setInputValue] = useState("");
 
+	const [emojisActive, setEmojisActive] = useState<boolean>(false);
+	const {refs, floatingStyles, context} = useFloating({
+		open: emojisActive,
+		onOpenChange: setEmojisActive,
+		placement: "top-start",
+		whileElementsMounted: autoUpdate,
+		middleware: [
+			offset(8),
+			flip(),
+			shift({padding: 8})
+		]
+	});
+
+	const click = useClick(context);
+	const dismiss = useDismiss(context);
+
+
+	const {getReferenceProps, getFloatingProps} = useInteractions([click, dismiss]);
+
+	const {isMounted, status} = useTransitionStatus(context, {duration: 200});
+
 	const inputRef = useRef<HTMLInputElement>(null);
 
 	useEffect(() => {
 		inputRef.current?.focus();
-		inputRef.current?.scrollIntoView({behavior: "smooth", block: "end"});
-	}, [])
-
-	useEffect(() => {
 		const observer = new IntersectionObserver((entries) => {
 			setFastScrollVisible(!entries[0].isIntersecting);
 		})
@@ -113,12 +165,24 @@ function Chat({selectedChat, chatId} : {selectedChat: { name: string }, chatId: 
 		if (inputRef.current) observer.observe(inputRef.current);
 
 		return () => observer.disconnect();
-	}, [window.scrollY])
+	}, [])
 
-	const emojis = ["😏"]
+	const emojiSectionsSymbols = [
+		{"smileys": <FaceSlightlySmiling />},
+		{"people": <Leaf />},
+		{"nature": <Soup />},
+		{"food": <Activity />},
+		{"travel": <TrainHighSpeed />},
+		{"activities": <Motorbike />},
+		{"objects": <LampDesk />},
+		{"symbols": <Asterisk />},
+		{"flags": <Flag />}
+	]
+
+	const emojiDivRef = useRef<HTMLDivElement>(null);
 
 	return (
-		<div className="flex flex-1 flex-col font-bold relative">
+		<div className={`flex flex-1 flex-col font-bold relative ${className}`}>
 			<div className="flex h-10 flex-row h-12 border-y border-y-white  sticky top-0 bg-gray-100 z-50">
 				<button className="cursor-pointer bg-white group transition-all duration-150 px-2 rounded-r-full" onClick={() => {navigate("/app?navigation=chats");}}>
 					<ChevronLeft className="size-10 group-hover:-translate-x-1" />
@@ -171,24 +235,71 @@ function Chat({selectedChat, chatId} : {selectedChat: { name: string }, chatId: 
 				<button className="my-auto" onClick={() => {inputValue.length > 0 && sendMessage.mutate({message: inputValue, chatId: chatId})}}>
 					<SendHorizonal className="lg:size-10 size-8 cursor-pointer" />
 				</button>
-				<button className="my-auto mr-2">
+				<button ref={refs.setReference} {...getReferenceProps()} className="my-auto mr-2 cursor-pointer" onClick={() => setEmojisActive(v => !v)}>
 					<FaceSlightlySmilingPlus className="lg:size-10 size-8"/>
 				</button>
-			</div>
-			<div className={`fixed w-[90%] bg-white h-[90%] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-51 rounded-2xl *:m-2`}>
-				<div className={`grid grid-cols-3 gap-1
-				*:rounded-xl *:p-2 *:text-[clamp(0.8em,2xl,1em)]
-				*:bg-gray-100
-				`}>
-					<button className={``}>Emojis</button>
-					<button className={``}>Gifs</button>
-					<button className={``}>Stickers</button>
-				</div>
-				<div className="overflow-y-scroll bg-gray-100 m-2">
-					{emojis.map((v, i) => (
-						<button>{v}</button>
-					))}
-				</div>
+				{isMounted && (
+					<div ref={refs.setFloating} {...getFloatingProps()} style={floatingStyles} className="w-[75%] h-[50%] z-51">
+						<div data-status={status} className={`flex w-full h-full flex-col bg-white rounded-2xl
+							origin-bottom transition duration-0
+							data-[status=open]:duration-200 data-[status=close]:duration-200
+    						data-[status=initial]:opacity-0 data-[status=initial]:scale-95
+    						data-[status=close]:opacity-0 data-[status=close]:scale-95"
+						`}
+							 onBlur={(e) => {if (!e.currentTarget.contains(e.relatedTarget)) setEmojisActive(false);}}
+						>
+							<div className={`grid grid-cols-3 gap-1
+								*:rounded-xl *:p-2 *:text-[clamp(0.8em,2xl,1em)]
+								*:bg-gray-100 m-2
+								`}>
+								<button className={`text-[clamp(0.8em,4vw,1em)] truncate cursor-pointer`}>Emojis</button>
+								<button className={`text-[clamp(0.8em,4vw,1em)] truncate cursor-pointer`}>Gifs</button>
+								<button className={`text-[clamp(0.8em,4vw,1em)] truncate cursor-pointer`}>Stickers</button>
+							</div>
+							<div className="flex flex-row w-full h-full mx-auto my-auto p-2 min-h-0">
+								<div className="flex flex-col p-1 overflow-y-scroll">
+									{emojiSectionsSymbols.map((v, i) => (
+										<button
+											onClick={() => {
+												if (!emojiDivRef.current) return;
+												const target = emojiDivRef.current.querySelector<HTMLElement>(`[data-section=${Object.entries(v).map(([name, _]) => name)}]`);
+												if (!target) return;
+												target.scrollIntoView({behavior: "smooth", block: "start"});
+											}}
+											className="p-1 shrink-0 cursor-pointer hover:outline-1 rounded-lg hover:outline-gray-500 hover:bg-gray-200">{Object.entries(v).map(([name, Node]) => (
+											Node
+										))}</button>
+									))}
+								</div>
+								<div ref={emojiDivRef} className="flex flex-1 min-w-0  flex-row flex-wrap justify-between bg-gray-100 rounded-lg overflow-y-scroll">
+									{Object.entries(EmojisJSON).map(([section, list]) => {
+										return (
+											<div key={section} className="flex flex-col">
+												<div className="bg-gray-200 sticky top-0">
+													<div className="flex flex-row font-bold text-center text-3xl mx-auto w-fit">
+														<div className={`self-center`}>
+															{emojiSectionsSymbols.map((v, i) => Object.entries(v).map(([name, Node]) => {if (name === section) return Node;}))}
+														</div>
+														<h2 data-section={section} className="lowercase first-letter:uppercase">{section}</h2>
+													</div>
+												</div>
+												<div className="flex flex-row flex-wrap justify-between m-1">
+													{Object.entries(list).map(([value, emoji]) => (
+														<button className="text-4xl hover:outline-1 hover:outline-gray-300 rounded-lg hover:bg-gray-200"
+														onClick={() => setInputValue(v => v + emoji)}
+														>
+															{emoji}
+														</button>
+													))}
+												</div>
+											</div>
+										)
+									})}
+								</div>
+							</div>
+						</div>
+					</div>
+				)}
 			</div>
 		</div>
 	)
